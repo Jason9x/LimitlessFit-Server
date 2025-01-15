@@ -28,7 +28,7 @@ public class UserService(ApplicationDbContext context, IConfiguration configurat
         {
             Name = request.Name,
             Email = request.Email,
-            Password = HashPassword(request.Password ?? string.Empty)
+            Password = HashPassword(request.Password)
         };
 
         await context.Users.AddAsync(user);
