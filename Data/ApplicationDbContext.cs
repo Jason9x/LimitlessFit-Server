@@ -1,5 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using LimitlessFit.Models;
 
 namespace LimitlessFit.Data;
 
-public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : DbContext(options);
+public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : DbContext(options)
+{
+    public DbSet<User> Users { get; set; }
+}
