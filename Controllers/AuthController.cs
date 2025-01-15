@@ -10,7 +10,7 @@ namespace LimitlessFit.Controllers;
 public class AuthController(IUserService userService) : ControllerBase
 {
     [HttpPost("register")]
-    public IActionResult Register(RegisterRequest request)
+    public async Task<IActionResult> Register(RegisterRequest request)
     {
         var isAnyFieldEmpty = string.IsNullOrEmpty(request.Name) || 
                               string.IsNullOrEmpty(request.Email) || 
@@ -18,7 +18,7 @@ public class AuthController(IUserService userService) : ControllerBase
 
         if (isAnyFieldEmpty) return BadRequest("Name, Email, and Password are required.");
         
-        var (registrationResult, token) = userService.Register(request);
+        var (registrationResult, token) = await userService.RegisterAsync(request);
 
         return registrationResult switch
         {
@@ -29,9 +29,9 @@ public class AuthController(IUserService userService) : ControllerBase
     }
 
     [HttpPost("login")]
-    public IActionResult Login(LoginRequest request)
+    public async Task<IActionResult> Login(LoginRequest request)
     {
-        var (user, token) = userService.Authenticate(request);
+        var (user, token) = await userService.Authenticate(request);
 
         if (user == null || token == null) return Unauthorized(new { Message = "Invalid credentials." });
 

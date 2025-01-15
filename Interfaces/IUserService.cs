@@ -6,6 +6,6 @@ namespace LimitlessFit.Interfaces;
 
 public interface IUserService
 {
-    (RegistrationResult result, string? token) Register(RegisterRequest request);
-    (User? user, string? token) Authenticate(LoginRequest request);
+    Task<(RegistrationResult result, string? token)> RegisterAsync(RegisterRequest request);
+    Task<(User? user, string? token)> Authenticate(LoginRequest request);
 }

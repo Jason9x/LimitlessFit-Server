@@ -5,6 +5,7 @@ using LimitlessFit.Helpers;
 using LimitlessFit.Interfaces;
 using LimitlessFit.Models;
 using LimitlessFit.Models.Requests;
+using Microsoft.EntityFrameworkCore;
 
 namespace LimitlessFit.Services;
 
@@ -17,9 +18,9 @@ public enum RegistrationResult
 
 public class UserService(ApplicationDbContext context, IConfiguration configuration) : IUserService
 {
-    public (RegistrationResult result, string? token) Register(RegisterRequest request)
+    public async Task<(RegistrationResult result, string? token)> RegisterAsync(RegisterRequest request)
     {
-        var userExists = context.Users.Any(user => user.Email == request.Email);
+        var userExists = await context.Users.AnyAsync(user => user.Email == request.Email);
 
         if (userExists) return (RegistrationResult.UserAlreadyExists, null);
         
@@ -30,9 +31,9 @@ public class UserService(ApplicationDbContext context, IConfiguration configurat
             Password = HashPassword(request.Password ?? string.Empty)
         };
 
-        context.Users.Add(user);
+        await context.Users.AddAsync(user);
     
-        var saveResult = context.SaveChanges();
+        var saveResult = await context.SaveChangesAsync();
         
         if (saveResult == 0) return (RegistrationResult.Failure, null);
         
@@ -41,9 +42,9 @@ public class UserService(ApplicationDbContext context, IConfiguration configurat
         return (RegistrationResult.Success, token);
     }
 
-    public (User? user, string? token) Authenticate(LoginRequest request)
+    public async Task<(User? user, string? token)> Authenticate(LoginRequest request)
     {
-        var user = context.Users.FirstOrDefault(user => user.Email == request.Email);
+        var user = await context.Users.FirstOrDefaultAsync(user => user.Email == request.Email);
         
         if (user == null || !Verify(request.Password, user.Password)) return (null, null);
 
