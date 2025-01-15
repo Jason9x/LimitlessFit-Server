@@ -1,21 +1,22 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace LimitlessFit.Models;
 
 public class User
 {
     [Key]
-    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-    public int Id { get; set; } 
+    public int? Id { get; init; }
 
     [Required]
-    public string Name { get; set; } 
+    [MaxLength(255)]
+    public string? Name { get; init; }
+    
+    [Required]
+    [EmailAddress]
+    [MaxLength(255)]
+    public string? Email { get; init; }
 
     [Required]
-    [EmailAddress] 
-    public string Email { get; set; }
-
-    [Required]
-    public required string Password { get; set; } 
+    [MaxLength(255)]
+    public string? Password { get; init; }
 }
