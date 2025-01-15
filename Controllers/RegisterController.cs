@@ -23,7 +23,7 @@ public class RegisterController : ControllerBase
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
 
-        if (_context.Users.FirstOrDefault(user => user.Email == model.Email) != null)
+        if (_context.Users.Any(user => user.Email == model.Email))
         {
             return BadRequest("Username already exists.");
         } 
@@ -34,7 +34,7 @@ public class RegisterController : ControllerBase
         {
             Name = model.Name,
             Email = model.Email,
-            PasswordHash = hashedPassword,
+            Password = hashedPassword,
         };
 
         _context.Users.Add(user);
