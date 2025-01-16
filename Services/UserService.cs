@@ -1,11 +1,12 @@
-﻿using static BCrypt.Net.BCrypt;
+﻿using Microsoft.EntityFrameworkCore;
+
+using static BCrypt.Net.BCrypt;
 
 using LimitlessFit.Data;
 using LimitlessFit.Helpers;
 using LimitlessFit.Interfaces;
 using LimitlessFit.Models;
 using LimitlessFit.Models.Requests;
-using Microsoft.EntityFrameworkCore;
 
 namespace LimitlessFit.Services;
 
@@ -23,10 +24,13 @@ public class UserService(ApplicationDbContext context, IConfiguration configurat
         var userExists = await context.Users.AnyAsync(user => user.Email == request.Email);
 
         if (userExists) return (RegistrationResult.UserAlreadyExists, null);
+
+        var tag = await GenerateUniqueTagAsync(request.Name);
+        var taggedName = $"{request.Name}#{tag}";
         
         var user = new User
         {
-            Name = request.Name,
+            Name = taggedName,
             Email = request.Email,
             Password = HashPassword(request.Password)
         };
@@ -46,10 +50,28 @@ public class UserService(ApplicationDbContext context, IConfiguration configurat
     {
         var user = await context.Users.FirstOrDefaultAsync(user => user.Email == request.Email);
         
-        if (user == null || !Verify(request.Password, user.Password)) return (null, null);
+        var isPasswordValid = Verify(request.Password, user?.Password);
+        
+        if (user == null || !isPasswordValid) return (null, null);
 
         var token = JwtTokenHelper.GenerateJwtToken(user, configuration);
 
         return (user, token);
     }
+
+    private async Task<string> GenerateUniqueTagAsync(string name)
+    {
+        string tag;
+        bool exists;
+
+        do
+        {
+            tag = Guid.NewGuid().ToString("N")[..8];
+
+            exists = await context.Users.AnyAsync(user => user.Name == $"{name}#{tag}");
+        } while (exists);
+
+        return tag;
+    }
+
 }
