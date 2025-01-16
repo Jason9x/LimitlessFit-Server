@@ -33,11 +33,11 @@ namespace LimitlessFit.Helpers
                 issuer: issuer,
                 audience: audience,
                 claims: claims,
-                expires: DateTime.UtcNow.AddHours(1), // Token expiry time
+                expires: DateTime.UtcNow.AddHours(1),
                 signingCredentials: credentials
             );
 
-            return new JwtSecurityTokenHandler().WriteToken(token); // Return the generated JWT token as a string
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
     }
 }

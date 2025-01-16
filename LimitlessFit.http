@@ -1,6 +1,6 @@
 @LimitlessFit_HostAddress = http://localhost:5284
 
-GET {{LimitlessFit_HostAddress}}/weatherforecast/
+GET {{LimitlessFit_HostAddress}}/api/
 Accept: application/json
 
 ###

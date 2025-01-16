@@ -1,7 +1,8 @@
-using LimitlessFit.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+
 using LimitlessFit.Services;
 using LimitlessFit.Models.Requests;
+using LimitlessFit.Interfaces;
 
 namespace LimitlessFit.Controllers;
 
@@ -12,19 +13,19 @@ public class AuthController(IUserService userService) : ControllerBase
     [HttpPost("register")]
     public async Task<IActionResult> Register(RegisterRequest request)
     {
-        var isAnyFieldEmpty = string.IsNullOrEmpty(request.Name) || 
-                              string.IsNullOrEmpty(request.Email) || 
+        var isAnyFieldEmpty = string.IsNullOrEmpty(request.Name) ||
+                              string.IsNullOrEmpty(request.Email) ||
                               string.IsNullOrEmpty(request.Password);
 
-        if (isAnyFieldEmpty) return BadRequest("Name, Email, and Password are required.");
-        
+        if (isAnyFieldEmpty) return BadRequest(new { MessageKey = "fieldsRequired" });
+
         var (registrationResult, token) = await userService.RegisterAsync(request);
 
         return registrationResult switch
         {
-            RegistrationResult.UserAlreadyExists => BadRequest("User already exists."),
-            RegistrationResult.Success => Ok(new { Message = "User registered successfully.", Token = token }),
-            _ => StatusCode(500, "An error occurred while registering the user.")
+            RegistrationResult.UserAlreadyExists => BadRequest(new { MessageKey = "userAlreadyExists" }),
+            RegistrationResult.Success => Ok(new { MessageKey = "successfulAccountCreation", Token = token }),
+            _ => StatusCode(500, new { MessageKey = "error" })
         };
     }
 
@@ -33,8 +34,8 @@ public class AuthController(IUserService userService) : ControllerBase
     {
         var (user, token) = await userService.Authenticate(request);
 
-        if (user == null || token == null) return Unauthorized(new { Message = "Invalid credentials." });
+        if (user == null || token == null) return Unauthorized(new { MessageKey = "invalidCredentials" });
 
-        return Ok(new { Message = "Login successful.", Token = token });
+        return Ok(new { MessageKey = "successfulLogin", Token = token });
     }
 }
