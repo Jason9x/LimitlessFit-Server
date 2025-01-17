@@ -59,7 +59,6 @@ public class UserService(ApplicationDbContext context, IConfiguration configurat
         var token = JwtTokenHelper.GenerateJwtToken(user, configuration);
 
         return (user, token);
-
     }
 
     private async Task<string> GenerateUniqueTagAsync(string name)
