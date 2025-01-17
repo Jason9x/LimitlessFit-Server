@@ -48,14 +48,18 @@ public class UserService(ApplicationDbContext context, IConfiguration configurat
 
     public async Task<(User? user, string? token)> Authenticate(LoginRequest request)
     {
-        var user = await context.Users.FirstOrDefaultAsync(user => user.Email == request.Email);
-        var isPasswordValid = Verify(request.Password, user?.Password);
-        
-        if (user == null || !isPasswordValid) return (null, null);
+        var user = await context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
+
+        if (user == null) return (null, null);
+
+        var isPasswordValid = Verify(request.Password, user.Password);
+
+        if (!isPasswordValid) return (null, null);
 
         var token = JwtTokenHelper.GenerateJwtToken(user, configuration);
 
         return (user, token);
+
     }
 
     private async Task<string> GenerateUniqueTagAsync(string name)
@@ -72,5 +76,4 @@ public class UserService(ApplicationDbContext context, IConfiguration configurat
 
         return tag;
     }
-
 }
