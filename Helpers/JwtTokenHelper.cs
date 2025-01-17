@@ -10,13 +10,11 @@ namespace LimitlessFit.Helpers
 {
     public static class JwtTokenHelper
     {
-        public static string GenerateJwtToken(User user, IConfiguration configuration)
+        public static string GenerateJwtToken(User user)
         {
-            var jwtSettings = configuration.GetSection("Jwt");
-
-            var key = jwtSettings["Key"];
-            var issuer = jwtSettings["Issuer"];
-            var audience = jwtSettings["Audience"];
+            var key = Environment.GetEnvironmentVariable("JWT_KEY");
+            var issuer = Environment.GetEnvironmentVariable("JWT_ISSUER");
+            var audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE");
 
             var claims = new[]
             {

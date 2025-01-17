@@ -17,7 +17,7 @@ public enum RegistrationResult
     Failure
 }
 
-public class UserService(ApplicationDbContext context, IConfiguration configuration) : IUserService
+public class UserService(ApplicationDbContext context) : IUserService
 {
     public async Task<(RegistrationResult result, string? token)> RegisterAsync(RegisterRequest request)
     {
@@ -41,7 +41,7 @@ public class UserService(ApplicationDbContext context, IConfiguration configurat
         
         if (saveResult == 0) return (RegistrationResult.Failure, null);
         
-        var token = JwtTokenHelper.GenerateJwtToken(user, configuration);
+        var token = JwtTokenHelper.GenerateJwtToken(user);
 
         return (RegistrationResult.Success, token);
     }
@@ -56,7 +56,7 @@ public class UserService(ApplicationDbContext context, IConfiguration configurat
 
         if (!isPasswordValid) return (null, null);
 
-        var token = JwtTokenHelper.GenerateJwtToken(user, configuration);
+        var token = JwtTokenHelper.GenerateJwtToken(user);
 
         return (user, token);
     }
