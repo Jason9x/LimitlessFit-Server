@@ -1,9 +1,7 @@
 using System.Text;
 using DotNetEnv;
-
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-
 using LimitlessFit.Data;
 using LimitlessFit.Interfaces;
 using LimitlessFit.Services;
@@ -13,7 +11,10 @@ var builder = WebApplication.CreateBuilder(args);
 Env.Load();
 
 builder.Services.AddControllers();
+
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IItemsService, ItemsService>();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -25,7 +26,9 @@ var dbName = Environment.GetEnvironmentVariable("DB_NAME");
 
 var connectionString = $"server={dbHost};port={dbPort};database={dbName};user={dbUser};password={dbPassword}";
 
-builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseMySQL(connectionString));
+builder.Services.AddDbContextPool<ApplicationDbContext>(options =>
+    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString))
+        .UseSnakeCaseNamingConvention());
 
 builder.Services.AddAuthentication("Bearer")
     .AddJwtBearer("Bearer", options =>
