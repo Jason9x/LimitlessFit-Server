@@ -8,18 +8,12 @@ namespace LimitlessFit.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class AuthController(IUserService userService) : ControllerBase
+public class AuthController(IAuthService authService) : ControllerBase
 {
     [HttpPost("register")]
     public async Task<IActionResult> Register(RegisterRequest request)
     {
-        var isAnyFieldEmpty = string.IsNullOrEmpty(request.Name) ||
-                              string.IsNullOrEmpty(request.Email) ||
-                              string.IsNullOrEmpty(request.Password);
-
-        if (isAnyFieldEmpty) return BadRequest(new { MessageKey = "fieldsRequired" });
-
-        var (registrationResult, token) = await userService.RegisterAsync(request);
+        var (registrationResult, token) = await authService.RegisterAsync(request);
 
         return registrationResult switch
         {
@@ -32,7 +26,7 @@ public class AuthController(IUserService userService) : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login(LoginRequest request)
     {
-        var (user, token) = await userService.Authenticate(request);
+        var (user, token) = await authService.Authenticate(request);
 
         if (user == null || token == null) return Unauthorized(new { MessageKey = "invalidCredentials" });
 

@@ -17,7 +17,7 @@ public enum RegistrationResult
     Failure
 }
 
-public class UserService(ApplicationDbContext context) : IUserService
+public class AuthService(ApplicationDbContext context) : IAuthService
 {
     public async Task<(RegistrationResult result, string? token)> RegisterAsync(RegisterRequest request)
     {
