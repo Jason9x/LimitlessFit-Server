@@ -1,13 +1,3 @@
-create table items
-(
-    id              int auto_increment
-        primary key,
-    image_url       varchar(255)   not null,
-    name_key        varchar(100)   not null,
-    description_key varchar(100)   not null,
-    price           decimal(10, 2) not null
-);
-
 INSERT INTO items (id, image_url, name_key, description_key, price) VALUES (1, '/assets/images/items/ez_barbell.png', 'ez_barbell_name', 'ez_barbell_description', 31.99);
 INSERT INTO items (id, image_url, name_key, description_key, price) VALUES (2, '/assets/images/items/dumbbells_set.png', 'dumbbells_set_name', 'dumbbells_set_description', 25.99);
 INSERT INTO items (id, image_url, name_key, description_key, price) VALUES (3, '/assets/images/items/kettlebell.png', 'kettlebell_name', 'kettlebell_description', 27.99);

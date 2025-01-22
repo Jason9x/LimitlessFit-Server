@@ -1,8 +1,9 @@
 ﻿namespace LimitlessFit.Models.Requests;
 
-public class RegisterRequest(string name, string email, string password)
+[Serializable]
+public class RegisterRequest
 {
-    public string Name { get; } = name;
-    public string Email { get; } = email;
-    public string Password { get; } = password;
+    public string? Name { get; set; }
+    public string? Email { get; set; }
+    public string? Password { get; set; }
 }

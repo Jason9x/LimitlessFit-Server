@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using LimitlessFit.Interfaces;
+using LimitlessFit.Models.Requests;
 
 namespace LimitlessFit.Controllers;
 
@@ -10,17 +11,15 @@ namespace LimitlessFit.Controllers;
 public class ItemsController(IItemsService itemsService) : ControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> GetItems(int pageNumber = 1, int pageSize = 10)
+    public async Task<IActionResult> GetItems([FromQuery] PagingRequest request)
     {
-        var items = await itemsService.GetAllItemsAsync(pageNumber, pageSize);
+        var items = await itemsService.GetAllItemsAsync(request);
         var totalItems = await itemsService.GetTotalItemsCountAsync();
-        var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
+        var totalPages = (int)Math.Ceiling((double)totalItems / request.PageSize);
 
         return Ok(new
         {
             items,
-            pageNumber,
-            pageSize,
             totalItems,
             totalPages
         });

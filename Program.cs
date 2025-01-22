@@ -1,8 +1,9 @@
 using System.Text;
+using System.Text.Json.Serialization;
 using DotNetEnv;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Microsoft.EntityFrameworkCore;
 using LimitlessFit.Data;
 using LimitlessFit.Interfaces;
 using LimitlessFit.Services;
@@ -11,10 +12,12 @@ var builder = WebApplication.CreateBuilder(args);
 
 Env.Load();
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options => { options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve; });
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IItemsService, ItemsService>();
+builder.Services.AddScoped<IOrdersService, OrdersService>();
 
 builder.Services.AddEndpointsApiExplorer();
 
@@ -52,9 +55,9 @@ var dbName = Environment.GetEnvironmentVariable("DB_NAME");
 
 var connectionString = $"server={dbHost};port={dbPort};database={dbName};user={dbUser};password={dbPassword}";
 
-builder.Services.AddDbContextPool<ApplicationDbContext>(options =>
-    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString))
-        .UseSnakeCaseNamingConvention());
+builder.Services.AddDbContextPool<ApplicationDbContext>(options => options
+    .UseMySql(connectionString, ServerVersion.AutoDetect(connectionString))
+    .UseSnakeCaseNamingConvention());
 
 builder.Services.AddAuthentication("Bearer")
     .AddJwtBearer("Bearer", options =>
@@ -88,6 +91,15 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var context = services.GetRequiredService<ApplicationDbContext>();
+    var environment = services.GetRequiredService<IHostEnvironment>();
+
+    await DatabaseSeeder.SeedDatabaseAsync(context, environment);
+}
 
 if (app.Environment.IsDevelopment())
 {
