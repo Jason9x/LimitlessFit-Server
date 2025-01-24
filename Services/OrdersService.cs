@@ -5,7 +5,6 @@ using LimitlessFit.Interfaces;
 using LimitlessFit.Models.Enums.Order;
 using LimitlessFit.Models.Order;
 using LimitlessFit.Models.Requests;
-using Microsoft.EntityFrameworkCore;
 
 namespace LimitlessFit.Services;
 
@@ -30,10 +29,10 @@ public class OrdersService(ApplicationDbContext context) : IOrdersService
         var order = new Order
         {
             CustomerName = request.CustomerName,
-            OrderDate = DateTime.UtcNow,
+            Date = DateTime.UtcNow,
             TotalPrice = totalPrice,
             Status = OrderStatus.Pending,
-            OrderItems = request.Items.Select(itemRequest => new OrderItem
+            Items = request.Items.Select(itemRequest => new OrderItem
             {
                 ItemId = itemRequest.ItemId,
                 Quantity = itemRequest.Quantity
@@ -50,7 +49,7 @@ public class OrdersService(ApplicationDbContext context) : IOrdersService
     public async Task<Order?> GetOrderByIdAsync(int id)
     {
         return await context.Orders
-            .Include(order => order.OrderItems)
+            .Include(order => order.Items)
             .ThenInclude(item => item.Item)
             .FirstOrDefaultAsync(order => order.Id == id);
     }
@@ -58,7 +57,7 @@ public class OrdersService(ApplicationDbContext context) : IOrdersService
     public async Task<List<Order>> GetAllOrdersAsync(PagingRequest request)
     {
         return await context.Orders
-            .Include(order => order.OrderItems)
+            .Include(order => order.Items)
             .ThenInclude(item => item.Item)
             .Skip((request.PageNumber - 1) * request.PageSize)
             .Take(request.PageSize)

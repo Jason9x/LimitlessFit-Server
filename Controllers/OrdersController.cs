@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using LimitlessFit.Interfaces;
 using LimitlessFit.Models.Enums.Order;
 using LimitlessFit.Models.Order;
@@ -6,6 +7,7 @@ using LimitlessFit.Models.Requests;
 
 namespace LimitlessFit.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class OrdersController(IOrdersService ordersService) : ControllerBase
@@ -38,7 +40,7 @@ public class OrdersController(IOrdersService ordersService) : ControllerBase
     {
         var order = await ordersService.GetOrderByIdAsync(id);
 
-        if (order == null) return NotFound(new { MessageKey = "OrderNotFound" });
+        if (order == null) return NotFound(new { MessageKey = "orderNotFound" });
 
         return Ok(order);
     }

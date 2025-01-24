@@ -10,7 +10,7 @@ public class Order
 
     [Required] [StringLength(100)] public string? CustomerName { get; init; }
 
-    [Required] public DateTime OrderDate { get; init; }
+    [Required] public DateTime? Date { get; init; }
 
     [Required]
     [Column(TypeName = "decimal(10,2)")]
@@ -18,5 +18,5 @@ public class Order
 
     [Required] public OrderStatus Status { get; init; }
 
-    public List<OrderItem> OrderItems { get; init; } = [];
+    public List<OrderItem> Items { get; init; } = [];
 }
