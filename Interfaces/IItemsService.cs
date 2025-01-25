@@ -5,6 +5,5 @@ namespace LimitlessFit.Interfaces;
 
 public interface IItemsService
 {
-    Task<List<Item>> GetAllItemsAsync(PagingRequest request);
-    Task<int> GetTotalItemsCountAsync();
+    Task<(List<Item> Items, int TotalPages)> GetAllItemsAsync(PagingRequest request);
 }

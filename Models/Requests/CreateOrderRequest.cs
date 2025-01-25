@@ -1,9 +1,8 @@
-namespace LimitlessFit.Models.Order;
+namespace LimitlessFit.Models.Requests;
 
 [Serializable]
 public class CreateOrderRequest
 {
-    public string? CustomerName { get; set; }
     public List<OrderItemRequest>? Items { get; set; }
 }
 

@@ -1,7 +1,7 @@
-namespace LimitlessFit.Models.Order;
-
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+
+namespace LimitlessFit.Models.Orders;
 
 public class OrderItem
 {

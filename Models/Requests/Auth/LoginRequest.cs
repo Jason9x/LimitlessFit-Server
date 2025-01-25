@@ -1,4 +1,4 @@
-﻿namespace LimitlessFit.Models.Requests;
+﻿namespace LimitlessFit.Models.Requests.Auth;
 
 [Serializable]
 public class LoginRequest

@@ -3,13 +3,13 @@ using Microsoft.EntityFrameworkCore;
 using LimitlessFit.Data;
 using LimitlessFit.Interfaces;
 using LimitlessFit.Models.Enums.Order;
-using LimitlessFit.Models.Order;
+using LimitlessFit.Models.Orders;
 using LimitlessFit.Models.Requests;
 
 namespace LimitlessFit.Services;
 
 [Authorize]
-public class OrdersService(ApplicationDbContext context) : IOrdersService
+public class OrdersService(ApplicationDbContext context, IAuthService authService) : IOrdersService
 {
     public async Task<Order> CreateOrderAsync(CreateOrderRequest request)
     {
@@ -18,7 +18,7 @@ public class OrdersService(ApplicationDbContext context) : IOrdersService
 
         var items = await context.Items.ToListAsync();
         var itemIds = request.Items.Select(item => item.ItemId).ToList();
-        var filteredItems = items.Where(item => itemIds.Contains(item.Id)).ToList(); 
+        var filteredItems = items.Where(item => itemIds.Contains(item.Id)).ToList();
 
         if (filteredItems.Count != itemIds.Count)
             throw new InvalidOperationException("Some items do not exist.");
@@ -26,9 +26,11 @@ public class OrdersService(ApplicationDbContext context) : IOrdersService
         var totalPrice = filteredItems.Sum(item =>
             item.Price * request.Items.First(itemRequest => itemRequest.ItemId == item.Id).Quantity);
 
+        var userId = authService.GetUserIdFromClaims();
+
         var order = new Order
         {
-            CustomerName = request.CustomerName,
+            UserId = userId,
             Date = DateTime.UtcNow,
             TotalPrice = totalPrice,
             Status = OrderStatus.Pending,
@@ -54,13 +56,36 @@ public class OrdersService(ApplicationDbContext context) : IOrdersService
             .FirstOrDefaultAsync(order => order.Id == id);
     }
 
-    public async Task<List<Order>> GetAllOrdersAsync(PagingRequest request)
+    public async Task<(List<Order> Orders, int TotalPages)> GetAllOrdersAsync(PagingRequest request)
     {
-        return await context.Orders
+        var totalItems = await context.Orders.CountAsync();
+        var totalPages = (int)Math.Ceiling((double)totalItems / request.PageSize);
+
+        var orders = await context.Orders
             .Include(order => order.Items)
             .ThenInclude(item => item.Item)
             .Skip((request.PageNumber - 1) * request.PageSize)
             .Take(request.PageSize)
             .ToListAsync();
+
+        return (orders, totalPages);
+    }
+
+    public async Task<(List<Order> Orders, int TotalPages)> GetMyOrdersAsync(PagingRequest request)
+    {
+        var userId = authService.GetUserIdFromClaims();
+
+        var totalItems = await context.Orders
+            .Where(order => order.UserId == userId)
+            .CountAsync();
+        var totalPages = (int)Math.Ceiling((double)totalItems / request.PageSize);
+
+        var orders = await context.Orders
+            .Where(order => order.UserId == userId)
+            .Skip((request.PageNumber - 1) * request.PageSize)
+            .Take(request.PageSize)
+            .ToListAsync();
+
+        return (orders, totalPages);
     }
 }

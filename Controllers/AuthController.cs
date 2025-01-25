@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using LimitlessFit.Models.Requests;
 using LimitlessFit.Interfaces;
 using LimitlessFit.Models.Enums.Auth;
+using LimitlessFit.Models.Requests.Auth;
 
 namespace LimitlessFit.Controllers;
 

@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using LimitlessFit.Interfaces;
 using LimitlessFit.Models.Enums.Order;
-using LimitlessFit.Models.Order;
 using LimitlessFit.Models.Requests;
 
 namespace LimitlessFit.Controllers;
@@ -45,12 +44,29 @@ public class OrdersController(IOrdersService ordersService) : ControllerBase
         return Ok(order);
     }
 
-    [HttpGet]
+    [Authorize(Policy = "Admin")]
+    [HttpGet("all")]
     public async Task<IActionResult> GetAllOrders([FromQuery] PagingRequest request)
     {
-        var orders = await ordersService.GetAllOrdersAsync(request);
+        var (orders, totalPages) = await ordersService.GetAllOrdersAsync(request);
 
-        return Ok(orders);
+        return Ok(new
+        {
+            orders,
+            totalPages
+        });
+    }
+
+    [HttpGet("my-orders")]
+    public async Task<IActionResult> GetMyOrders([FromQuery] PagingRequest request)
+    {
+        var (orders, totalPages) = await ordersService.GetMyOrdersAsync(request);
+
+        return Ok(new
+        {
+            orders,
+            totalPages
+        });
     }
 
     private ObjectResult GetErrorResponse(OrderErrorType errorType, string exceptionMessage)

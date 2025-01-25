@@ -8,16 +8,16 @@ namespace LimitlessFit.Services;
 
 public class ItemsService(ApplicationDbContext context) : IItemsService
 {
-    public async Task<List<Item>> GetAllItemsAsync(PagingRequest request)
+    public async Task<(List<Item> Items, int TotalPages)> GetAllItemsAsync(PagingRequest request)
     {
-        return await context.Items
+        var totalItems = await context.Items.CountAsync();
+        var totalPages = (int)Math.Ceiling(totalItems / (double)request.PageSize);
+
+        var items = await context.Items
             .Skip((request.PageNumber - 1) * request.PageSize)
             .Take(request.PageSize)
             .ToListAsync();
-    }
 
-    public async Task<int> GetTotalItemsCountAsync()
-    {
-        return await context.Items.CountAsync();
+        return (items, totalPages);
     }
 }

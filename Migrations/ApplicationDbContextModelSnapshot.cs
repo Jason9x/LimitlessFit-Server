@@ -59,7 +59,7 @@ namespace LimitlessFit.Migrations
                     b.ToTable("items", (string)null);
                 });
 
-            modelBuilder.Entity("LimitlessFit.Models.Order.Order", b =>
+            modelBuilder.Entity("LimitlessFit.Models.Orders.Order", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -67,12 +67,6 @@ namespace LimitlessFit.Migrations
                         .HasColumnName("id");
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("CustomerName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)")
-                        .HasColumnName("customer_name");
 
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime(6)")
@@ -87,13 +81,20 @@ namespace LimitlessFit.Migrations
                         .HasColumnType("decimal(10,2)")
                         .HasColumnName("total_price");
 
+                    b.Property<int>("UserId")
+                        .HasColumnType("int")
+                        .HasColumnName("user_id");
+
                     b.HasKey("Id")
                         .HasName("pk_orders");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_orders_user_id");
 
                     b.ToTable("orders", (string)null);
                 });
 
-            modelBuilder.Entity("LimitlessFit.Models.Order.OrderItem", b =>
+            modelBuilder.Entity("LimitlessFit.Models.Orders.OrderItem", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -124,6 +125,27 @@ namespace LimitlessFit.Migrations
                         .HasDatabaseName("ix_order_items_order_id");
 
                     b.ToTable("order_items", (string)null);
+                });
+
+            modelBuilder.Entity("LimitlessFit.Models.Role", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .HasColumnName("name");
+
+                    b.HasKey("Id")
+                        .HasName("pk_roles");
+
+                    b.ToTable("roles", (string)null);
                 });
 
             modelBuilder.Entity("LimitlessFit.Models.User", b =>
@@ -161,6 +183,10 @@ namespace LimitlessFit.Migrations
                         .HasColumnType("varchar(128)")
                         .HasColumnName("password");
 
+                    b.Property<int>("RoleId")
+                        .HasColumnType("int")
+                        .HasColumnName("role_id");
+
                     b.HasKey("Id")
                         .HasName("pk_users");
 
@@ -168,10 +194,25 @@ namespace LimitlessFit.Migrations
                         .IsUnique()
                         .HasDatabaseName("ix_users_email");
 
+                    b.HasIndex("RoleId")
+                        .HasDatabaseName("ix_users_role_id");
+
                     b.ToTable("users", (string)null);
                 });
 
-            modelBuilder.Entity("LimitlessFit.Models.Order.OrderItem", b =>
+            modelBuilder.Entity("LimitlessFit.Models.Orders.Order", b =>
+                {
+                    b.HasOne("LimitlessFit.Models.User", "User")
+                        .WithMany("Orders")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_orders_users_user_id");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("LimitlessFit.Models.Orders.OrderItem", b =>
                 {
                     b.HasOne("LimitlessFit.Models.Item", "Item")
                         .WithMany()
@@ -180,7 +221,7 @@ namespace LimitlessFit.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_order_items_items_item_id");
 
-                    b.HasOne("LimitlessFit.Models.Order.Order", "Order")
+                    b.HasOne("LimitlessFit.Models.Orders.Order", "Order")
                         .WithMany("Items")
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -192,9 +233,26 @@ namespace LimitlessFit.Migrations
                     b.Navigation("Order");
                 });
 
-            modelBuilder.Entity("LimitlessFit.Models.Order.Order", b =>
+            modelBuilder.Entity("LimitlessFit.Models.User", b =>
+                {
+                    b.HasOne("LimitlessFit.Models.Role", "Role")
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_users_roles_role_id");
+
+                    b.Navigation("Role");
+                });
+
+            modelBuilder.Entity("LimitlessFit.Models.Orders.Order", b =>
                 {
                     b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("LimitlessFit.Models.User", b =>
+                {
+                    b.Navigation("Orders");
                 });
 #pragma warning restore 612, 618
         }

@@ -1,8 +1,10 @@
+using LimitlessFit.Models.Orders;
 using System.ComponentModel.DataAnnotations;
-using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace LimitlessFit.Models;
 
+[Serializable]
 public class User
 {
     [Key] public int? Id { get; init; }
@@ -16,7 +18,13 @@ public class User
 
     [Required] [MaxLength(128)] public string? Password { get; init; }
 
+    [Required] public int RoleId { get; init; }
+
+    [ForeignKey(nameof(RoleId))] public Role? Role { get; init; }
+
     [Required] public int FailedLoginAttempts { get; set; }
 
     public DateTime? LockoutEnd { get; set; }
+
+    public List<Order> Orders { get; init; } = [];
 }

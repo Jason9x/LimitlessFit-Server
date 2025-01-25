@@ -8,3 +8,5 @@ INSERT INTO items (id, image_url, name_key, description_key, price) VALUES (7, '
 INSERT INTO items (id, image_url, name_key, description_key, price) VALUES (8, '/assets/images/items/jumping_rope.png', 'jumping_rope_name', 'jumping_rope_description', 5.99);
 INSERT INTO items (id, image_url, name_key, description_key, price) VALUES (9, '/assets/images/items/weight_disc.png', 'weight_disc_name', 'weight_disc_description', 6.99);
 INSERT INTO items (id, image_url, name_key, description_key, price) VALUES (10, '/assets/images/items/creatine.png', 'creatine_name', 'creatine_description', 4.99);
+
+INSERT INTO role (name) VALUES ('Admin'), ('User');

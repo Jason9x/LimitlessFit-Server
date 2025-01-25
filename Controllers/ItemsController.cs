@@ -13,14 +13,11 @@ public class ItemsController(IItemsService itemsService) : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetItems([FromQuery] PagingRequest request)
     {
-        var items = await itemsService.GetAllItemsAsync(request);
-        var totalItems = await itemsService.GetTotalItemsCountAsync();
-        var totalPages = (int)Math.Ceiling((double)totalItems / request.PageSize);
-
+        var (items, totalPages) = await itemsService.GetAllItemsAsync(request);
+        
         return Ok(new
         {
             items,
-            totalItems,
             totalPages
         });
     }

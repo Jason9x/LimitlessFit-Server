@@ -21,6 +21,7 @@ namespace LimitlessFit.Helpers
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString() ?? string.Empty),
                 new Claim(ClaimTypes.Name, user.Name ?? string.Empty),
                 new Claim(ClaimTypes.Email, user.Email ?? string.Empty),
+                new Claim(ClaimTypes.Role, user.Role?.Name ?? string.Empty),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             };
 

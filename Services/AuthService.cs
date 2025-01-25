@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Security.Claims;
+using Microsoft.EntityFrameworkCore;
 using System.Text.RegularExpressions;
 using static BCrypt.Net.BCrypt;
 using LimitlessFit.Data;
@@ -7,10 +8,11 @@ using LimitlessFit.Interfaces;
 using LimitlessFit.Models;
 using LimitlessFit.Models.Enums.Auth;
 using LimitlessFit.Models.Requests;
+using LimitlessFit.Models.Requests.Auth;
 
 namespace LimitlessFit.Services;
 
-public partial class AuthService(ApplicationDbContext context) : IAuthService
+public partial class AuthService(ApplicationDbContext context, IHttpContextAccessor httpContextAccessor) : IAuthService
 {
     private const int MaxFailedAttempts = 5;
     private const int LockoutMinutes = 15;
@@ -39,14 +41,15 @@ public partial class AuthService(ApplicationDbContext context) : IAuthService
 
         return (LoginResult.Success, token);
     }
-    
+
     public async Task<(RegistrationResult result, string? token)> RegisterAsync(RegisterRequest request)
     {
         if (!ValidateEmail(request.Email ?? string.Empty)) return (RegistrationResult.InvalidEmail, null);
 
         if (!ValidateName(request.Name ?? string.Empty)) return (RegistrationResult.InvalidName, null);
 
-        if (!ValidatePasswordPolicy(request.Password ?? string.Empty)) return (RegistrationResult.InvalidPassword, null);
+        if (!ValidatePasswordPolicy(request.Password ?? string.Empty))
+            return (RegistrationResult.InvalidPassword, null);
 
         var userExists = await context.Users.AnyAsync(user => user.Email == request.Email);
 
@@ -73,6 +76,15 @@ public partial class AuthService(ApplicationDbContext context) : IAuthService
         var token = JwtTokenHelper.GenerateJwtToken(user);
 
         return (RegistrationResult.Success, token);
+    }
+
+    public int GetUserIdFromClaims()
+    {
+        var userIdClaim = httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier);
+        
+        if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var userId)) return userId;
+
+        throw new UnauthorizedAccessException("User not authenticated");
     }
 
     private async Task<string> GenerateUniqueTagAsync(string? name)
