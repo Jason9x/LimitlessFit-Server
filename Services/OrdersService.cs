@@ -56,34 +56,56 @@ public class OrdersService(ApplicationDbContext context, IAuthService authServic
             .FirstOrDefaultAsync(order => order.Id == id);
     }
 
-    public async Task<(List<Order> Orders, int TotalPages)> GetAllOrdersAsync(PagingRequest request)
+    public async Task<(List<Order> orders, int totalPages)> GetAllOrdersAsync(PagingRequest paging,
+        OrderFilterCriteria filterCriteria)
     {
-        var totalItems = await context.Orders.CountAsync();
-        var totalPages = (int)Math.Ceiling((double)totalItems / request.PageSize);
+        var query = context.Orders.AsQueryable();
 
-        var orders = await context.Orders
+        if (filterCriteria.StartDate != null)
+            query = query.Where(order => order.Date >= filterCriteria.StartDate);
+
+        if (filterCriteria.EndDate != null)
+            query = query.Where(order => order.Date <= filterCriteria.EndDate);
+
+        if (filterCriteria.Status != null)
+            query = query.Where(order => order.Status == filterCriteria.Status);
+
+        var totalItems = await query.CountAsync();
+        var totalPages = (int)Math.Ceiling((double)totalItems / paging.PageSize);
+
+        var orders = await query
             .Include(order => order.Items)
             .ThenInclude(item => item.Item)
-            .Skip((request.PageNumber - 1) * request.PageSize)
-            .Take(request.PageSize)
+            .Skip((paging.PageNumber - 1) * paging.PageSize)
+            .Take(paging.PageSize)
             .ToListAsync();
 
         return (orders, totalPages);
     }
 
-    public async Task<(List<Order> Orders, int TotalPages)> GetMyOrdersAsync(PagingRequest request)
+    public async Task<(List<Order> orders, int totalPages)> GetMyOrdersAsync(PagingRequest paging,
+        OrderFilterCriteria filterCriteria)
     {
         var userId = authService.GetUserIdFromClaims();
+        var query = context.Orders.Where(order => order.UserId == userId);
 
-        var totalItems = await context.Orders
-            .Where(order => order.UserId == userId)
-            .CountAsync();
-        var totalPages = (int)Math.Ceiling((double)totalItems / request.PageSize);
+        if (filterCriteria.StartDate != null)
+            query = query.Where(order => order.Date >= filterCriteria.StartDate);
 
-        var orders = await context.Orders
-            .Where(order => order.UserId == userId)
-            .Skip((request.PageNumber - 1) * request.PageSize)
-            .Take(request.PageSize)
+        if (filterCriteria.EndDate != null)
+            query = query.Where(order => order.Date <= filterCriteria.EndDate);
+
+        if (filterCriteria.Status != null)
+            query = query.Where(order => order.Status == filterCriteria.Status);
+
+        var totalItems = await query.CountAsync();
+        var totalPages = (int)Math.Ceiling((double)totalItems / paging.PageSize);
+
+        var orders = await query
+            .Include(order => order.Items)
+            .ThenInclude(item => item.Item)
+            .Skip((paging.PageNumber - 1) * paging.PageSize)
+            .Take(paging.PageSize)
             .ToListAsync();
 
         return (orders, totalPages);

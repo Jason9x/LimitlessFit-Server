@@ -7,7 +7,6 @@ using LimitlessFit.Helpers;
 using LimitlessFit.Interfaces;
 using LimitlessFit.Models;
 using LimitlessFit.Models.Enums.Auth;
-using LimitlessFit.Models.Requests;
 using LimitlessFit.Models.Requests.Auth;
 
 namespace LimitlessFit.Services;
@@ -19,7 +18,8 @@ public partial class AuthService(ApplicationDbContext context, IHttpContextAcces
 
     public async Task<(LoginResult result, string? token)> Login(LoginRequest request)
     {
-        var user = await context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
+        var user = await context.Users.Include(user => user.Role)
+            .FirstOrDefaultAsync(user => user.Email == request.Email);
 
         if (user == null) return (LoginResult.UserNotFound, null);
 
@@ -81,7 +81,7 @@ public partial class AuthService(ApplicationDbContext context, IHttpContextAcces
     public int GetUserIdFromClaims()
     {
         var userIdClaim = httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier);
-        
+
         if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var userId)) return userId;
 
         throw new UnauthorizedAccessException("User not authenticated");

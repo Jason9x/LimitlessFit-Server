@@ -9,4 +9,4 @@ INSERT INTO items (id, image_url, name_key, description_key, price) VALUES (8, '
 INSERT INTO items (id, image_url, name_key, description_key, price) VALUES (9, '/assets/images/items/weight_disc.png', 'weight_disc_name', 'weight_disc_description', 6.99);
 INSERT INTO items (id, image_url, name_key, description_key, price) VALUES (10, '/assets/images/items/creatine.png', 'creatine_name', 'creatine_description', 4.99);
 
-INSERT INTO role (name) VALUES ('Admin'), ('User');
+INSERT INTO roles (name) VALUES ('Admin'), ('User');

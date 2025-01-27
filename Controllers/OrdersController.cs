@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using LimitlessFit.Interfaces;
 using LimitlessFit.Models.Enums.Order;
+using LimitlessFit.Models.Orders;
 using LimitlessFit.Models.Requests;
 
 namespace LimitlessFit.Controllers;
@@ -44,11 +45,13 @@ public class OrdersController(IOrdersService ordersService) : ControllerBase
         return Ok(order);
     }
 
-    [Authorize(Policy = "Admin")]
+    [Authorize(Roles = "Admin")]
     [HttpGet("all")]
-    public async Task<IActionResult> GetAllOrders([FromQuery] PagingRequest request)
+    public async Task<IActionResult> GetAllOrders([FromQuery] PagingRequest paging,
+        [FromQuery] OrderFilterCriteria filterCriteria)
     {
-        var (orders, totalPages) = await ordersService.GetAllOrdersAsync(request);
+        var (orders, totalPages) =
+            await ordersService.GetAllOrdersAsync(paging, filterCriteria);
 
         return Ok(new
         {
@@ -58,9 +61,11 @@ public class OrdersController(IOrdersService ordersService) : ControllerBase
     }
 
     [HttpGet("my-orders")]
-    public async Task<IActionResult> GetMyOrders([FromQuery] PagingRequest request)
+    public async Task<IActionResult> GetMyOrders([FromQuery] PagingRequest paging,
+        [FromQuery] OrderFilterCriteria filterCriteria)
     {
-        var (orders, totalPages) = await ordersService.GetMyOrdersAsync(request);
+        var (orders, totalPages) =
+            await ordersService.GetMyOrdersAsync(paging, filterCriteria);
 
         return Ok(new
         {
@@ -77,8 +82,7 @@ public class OrdersController(IOrdersService ordersService) : ControllerBase
         {
             OrderErrorType.InvalidOrder => BadRequest(response),
             OrderErrorType.InvalidItems => BadRequest(response),
-            _ => StatusCode(500,
-                new { MessageKey = errorType.ToString(), Message = "An unexpected error occurred." })
+            _ => StatusCode(500, new { MessageKey = errorType.ToString(), Message = "An unexpected error occurred." })
         };
     }
 }

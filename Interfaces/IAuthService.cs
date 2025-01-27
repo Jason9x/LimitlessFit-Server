@@ -1,5 +1,4 @@
 ﻿using LimitlessFit.Models.Enums.Auth;
-using LimitlessFit.Models.Requests;
 using LimitlessFit.Models.Requests.Auth;
 
 namespace LimitlessFit.Interfaces;

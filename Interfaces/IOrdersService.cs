@@ -7,6 +7,10 @@ public interface IOrdersService
 {
     Task<Order> CreateOrderAsync(CreateOrderRequest request);
     Task<Order?> GetOrderByIdAsync(int id);
-    Task<(List<Order> Orders, int TotalPages)> GetAllOrdersAsync(PagingRequest request);
-    Task<(List<Order> Orders, int TotalPages)> GetMyOrdersAsync(PagingRequest request);
+
+    Task<(List<Order> orders, int totalPages)> GetAllOrdersAsync(PagingRequest paging,
+        OrderFilterCriteria filterCriteria);
+
+    Task<(List<Order> orders, int totalPages)> GetMyOrdersAsync(PagingRequest paging,
+        OrderFilterCriteria filterCriteria);
 }
