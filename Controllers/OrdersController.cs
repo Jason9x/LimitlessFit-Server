@@ -74,6 +74,28 @@ public class OrdersController(IOrdersService ordersService) : ControllerBase
         });
     }
 
+    [Authorize(Roles = "Admin")]
+    [HttpPatch("{id:int}/status")]
+    public async Task<IActionResult> UpdateOrderStatus(int id, [FromBody] OrderStatus status)
+    {
+        try
+        {
+            await ordersService.UpdateOrderStatusAsync(id, status);
+
+            return NoContent();
+        }
+
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+
+        catch (Exception exception)
+        {
+            return StatusCode(500, exception.Message);
+        }
+    }
+
     private ObjectResult GetErrorResponse(OrderErrorType errorType, string exceptionMessage)
     {
         var response = new { MessageKey = errorType.ToString(), Message = exceptionMessage };

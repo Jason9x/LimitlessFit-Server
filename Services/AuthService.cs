@@ -57,12 +57,17 @@ public partial class AuthService(ApplicationDbContext context, IHttpContextAcces
 
         var tag = await GenerateUniqueTagAsync(request.Name);
         var taggedName = $"{request.Name}#{tag}";
+        
+        var defaultRole = await context.Roles.FirstOrDefaultAsync(role => role.Name == "User");
+
+        if (defaultRole == null) return (RegistrationResult.Failure, null);
 
         var user = new User
         {
             Name = taggedName,
             Email = request.Email,
             Password = HashPassword(request.Password),
+            RoleId = defaultRole.Id,
             FailedLoginAttempts = 0,
             LockoutEnd = null
         };

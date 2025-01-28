@@ -18,7 +18,7 @@ public class Order
     [Column(TypeName = "decimal(10,2)")]
     public decimal TotalPrice { get; init; }
 
-    [Required] public OrderStatus Status { get; init; }
+    [Required] public OrderStatus Status { get; set; }
 
     public List<OrderItem> Items { get; init; } = [];
 }

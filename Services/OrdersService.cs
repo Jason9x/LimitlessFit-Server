@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.SignalR;
 using LimitlessFit.Data;
 using LimitlessFit.Interfaces;
 using LimitlessFit.Models.Enums.Order;
@@ -9,7 +10,10 @@ using LimitlessFit.Models.Requests;
 namespace LimitlessFit.Services;
 
 [Authorize]
-public class OrdersService(ApplicationDbContext context, IAuthService authService) : IOrdersService
+public class OrdersService(
+    ApplicationDbContext context,
+    IAuthService authService,
+    IHubContext<OrderStatusHub> hubContext) : IOrdersService
 {
     public async Task<Order> CreateOrderAsync(CreateOrderRequest request)
     {
@@ -70,10 +74,13 @@ public class OrdersService(ApplicationDbContext context, IAuthService authServic
         if (filterCriteria.Status != null)
             query = query.Where(order => order.Status == filterCriteria.Status);
 
+        query = query.OrderByDescending(order => order.Date);
+
         var totalItems = await query.CountAsync();
         var totalPages = (int)Math.Ceiling((double)totalItems / paging.PageSize);
 
         var orders = await query
+            .Include(order => order.User)
             .Include(order => order.Items)
             .ThenInclude(item => item.Item)
             .Skip((paging.PageNumber - 1) * paging.PageSize)
@@ -98,6 +105,8 @@ public class OrdersService(ApplicationDbContext context, IAuthService authServic
         if (filterCriteria.Status != null)
             query = query.Where(order => order.Status == filterCriteria.Status);
 
+        query = query.OrderByDescending(order => order.Date);
+
         var totalItems = await query.CountAsync();
         var totalPages = (int)Math.Ceiling((double)totalItems / paging.PageSize);
 
@@ -109,5 +118,20 @@ public class OrdersService(ApplicationDbContext context, IAuthService authServic
             .ToListAsync();
 
         return (orders, totalPages);
+    }
+
+    public async Task UpdateOrderStatusAsync(int orderId, OrderStatus status)
+    {
+        var order = await context.Orders.FirstOrDefaultAsync(order => order.Id == orderId);
+
+        if (order == null)
+            throw new KeyNotFoundException($"Order with ID {orderId} was not found.");
+
+        order.Status = status;
+        context.Orders.Update(order);
+
+        await context.SaveChangesAsync();
+
+        await hubContext.Clients.All.SendAsync("ReceiveOrderStatusUpdate", orderId, status);
     }
 }
