@@ -6,6 +6,7 @@ using LimitlessFit.Interfaces;
 using LimitlessFit.Models.Enums.Order;
 using LimitlessFit.Models.Orders;
 using LimitlessFit.Models.Requests;
+using LimitlessFit.Services.Hubs;
 
 namespace LimitlessFit.Services;
 
@@ -13,7 +14,7 @@ namespace LimitlessFit.Services;
 public class OrdersService(
     ApplicationDbContext context,
     IAuthService authService,
-    IHubContext<OrderStatusHub> hubContext) : IOrdersService
+    IHubContext<OrderUpdateHub> hubContext) : IOrdersService
 {
     public async Task<Order> CreateOrderAsync(CreateOrderRequest request)
     {
@@ -48,7 +49,22 @@ public class OrdersService(
         context.Orders.Add(order);
 
         await context.SaveChangesAsync();
-
+        
+        var simplifiedOrder = new
+        {
+            order.Id,
+            order.Status,
+            order.Date,
+            order.TotalPrice,
+            Items = order.Items.Select(item => new
+            {
+                item.ItemId,
+                item.Quantity
+            }).ToList()
+        };
+        
+        await hubContext.Clients.All.SendAsync("ReceiveOrderUpdate", simplifiedOrder);
+        
         return order;
     }
 

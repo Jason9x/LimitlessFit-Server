@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using LimitlessFit.Data;
 using LimitlessFit.Interfaces;
 using LimitlessFit.Services;
+using LimitlessFit.Services.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -92,7 +93,7 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddSignalR();
+builder.Services.AddSignalR(options => { options.EnableDetailedErrors = true; });
 
 var app = builder.Build();
 
@@ -117,6 +118,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-app.MapHub<OrderStatusHub>("/orderStatusHub");
+app.MapHub<OrderUpdateHub>("/orderUpdateHub");
 
 app.Run();
