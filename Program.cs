@@ -19,8 +19,9 @@ builder.Services.AddControllers()
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IItemsService, ItemsService>();
-builder.Services.AddScoped<IOrdersService, OrdersService>();
+builder.Services.AddScoped<IItemService, ItemService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 builder.Services.AddEndpointsApiExplorer();
 

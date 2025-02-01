@@ -5,7 +5,7 @@
 namespace LimitlessFit.Migrations
 {
     /// <inheritdoc />
-    public partial class RenameOrderColumns : Migration
+    public partial class UpdateNotificationTable : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

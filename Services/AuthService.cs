@@ -44,11 +44,11 @@ public partial class AuthService(ApplicationDbContext context, IHttpContextAcces
 
     public async Task<(RegistrationResult result, string? token)> RegisterAsync(RegisterRequest request)
     {
-        if (!ValidateEmail(request.Email ?? string.Empty)) return (RegistrationResult.InvalidEmail, null);
+        if (!ValidateEmail(request.Email)) return (RegistrationResult.InvalidEmail, null);
 
-        if (!ValidateName(request.Name ?? string.Empty)) return (RegistrationResult.InvalidName, null);
+        if (!ValidateName(request.Name)) return (RegistrationResult.InvalidName, null);
 
-        if (!ValidatePasswordPolicy(request.Password ?? string.Empty))
+        if (!ValidatePasswordPolicy(request.Password))
             return (RegistrationResult.InvalidPassword, null);
 
         var userExists = await context.Users.AnyAsync(user => user.Email == request.Email);

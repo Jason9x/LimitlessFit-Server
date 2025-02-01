@@ -1,9 +1,17 @@
-﻿namespace LimitlessFit.Models.Requests.Auth;
+﻿using System.ComponentModel.DataAnnotations;
 
-[Serializable]
-public class RegisterRequest
-{
-    public string? Name { get; set; }
-    public string? Email { get; set; }
-    public string? Password { get; set; }
-}
+namespace LimitlessFit.Models.Requests.Auth;
+
+public record RegisterRequest(
+    [Required]
+    [StringLength(50, MinimumLength = 2)]
+    string Name,
+    [Required]
+    [EmailAddress]
+    [StringLength(100)]
+    string Email,
+    [Required]
+    [DataType(DataType.Password)]
+    [StringLength(100, MinimumLength = 8)]
+    string Password
+);

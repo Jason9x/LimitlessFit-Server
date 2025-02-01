@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LimitlessFit.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250125231126_AddRoleToUser")]
-    partial class AddRoleToUser
+    [Migration("20250130190610_DeleteDescriptionKeyColumn")]
+    partial class DeleteDescriptionKeyColumn
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -60,6 +60,42 @@ namespace LimitlessFit.Migrations
                         .HasName("pk_items");
 
                     b.ToTable("items", (string)null);
+                });
+
+            modelBuilder.Entity("LimitlessFit.Models.Notification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("is_read");
+
+                    b.Property<string>("MessageKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("message_key");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_notifications");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_notifications_user_id");
+
+                    b.ToTable("notifications", (string)null);
                 });
 
             modelBuilder.Entity("LimitlessFit.Models.Orders.Order", b =>
@@ -146,9 +182,9 @@ namespace LimitlessFit.Migrations
                         .HasColumnName("name");
 
                     b.HasKey("Id")
-                        .HasName("pk_role");
+                        .HasName("pk_roles");
 
-                    b.ToTable("role", (string)null);
+                    b.ToTable("roles", (string)null);
                 });
 
             modelBuilder.Entity("LimitlessFit.Models.User", b =>
@@ -203,6 +239,18 @@ namespace LimitlessFit.Migrations
                     b.ToTable("users", (string)null);
                 });
 
+            modelBuilder.Entity("LimitlessFit.Models.Notification", b =>
+                {
+                    b.HasOne("LimitlessFit.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_notifications_users_user_id");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("LimitlessFit.Models.Orders.Order", b =>
                 {
                     b.HasOne("LimitlessFit.Models.User", "User")
@@ -243,7 +291,7 @@ namespace LimitlessFit.Migrations
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_users_role_role_id");
+                        .HasConstraintName("fk_users_roles_role_id");
 
                     b.Navigation("Role");
                 });

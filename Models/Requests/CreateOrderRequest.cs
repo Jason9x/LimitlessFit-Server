@@ -1,14 +1,8 @@
+using System.Text.Json.Serialization;
+
 namespace LimitlessFit.Models.Requests;
 
-[Serializable]
-public class CreateOrderRequest
-{
-    public List<OrderItemRequest>? Items { get; set; }
-}
+public record CreateOrderRequest(List<OrderItemRequest>? Items);
 
-[Serializable]
-public class OrderItemRequest
-{
-    public int ItemId { get; set; }
-    public int Quantity { get; set; }
-}
+[JsonSerializable(typeof(OrderItemRequest))]
+public record OrderItemRequest(int ItemId, int Quantity);

@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using LimitlessFit.Models.Requests;
 using LimitlessFit.Interfaces;
 using LimitlessFit.Models.Enums.Auth;
 using LimitlessFit.Models.Requests.Auth;
@@ -8,9 +7,15 @@ namespace LimitlessFit.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Produces("application/json")]
 public class AuthController(IAuthService authService) : ControllerBase
 {
     [HttpPost("login")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Login(LoginRequest request)
     {
         var (result, token) = await authService.Login(request);
@@ -24,8 +29,12 @@ public class AuthController(IAuthService authService) : ControllerBase
             _ => StatusCode(500, new { MessageKey = "loginFailed" })
         };
     }
-    
+
     [HttpPost("register")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Register(RegisterRequest request)
     {
         var (result, token) = await authService.RegisterAsync(request);

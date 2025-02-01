@@ -11,10 +11,11 @@ using LimitlessFit.Services.Hubs;
 namespace LimitlessFit.Services;
 
 [Authorize]
-public class OrdersService(
+public class OrderService(
     ApplicationDbContext context,
     IAuthService authService,
-    IHubContext<OrderUpdateHub> hubContext) : IOrdersService
+    INotificationService notificationService,
+    IHubContext<OrderUpdateHub> hubContext) : IOrderService
 {
     public async Task<Order> CreateOrderAsync(CreateOrderRequest request)
     {
@@ -28,8 +29,12 @@ public class OrdersService(
         if (filteredItems.Count != itemIds.Count)
             throw new InvalidOperationException("Some items do not exist.");
 
-        var totalPrice = filteredItems.Sum(item =>
-            item.Price * request.Items.First(itemRequest => itemRequest.ItemId == item.Id).Quantity);
+        var totalPrice = Math.Round(
+            filteredItems.Sum(item =>
+                item.Price * request.Items.First(itemRequest => itemRequest.ItemId == item.Id).Quantity),
+            2,
+            MidpointRounding.AwayFromZero
+        );
 
         var userId = authService.GetUserIdFromClaims();
 
@@ -49,7 +54,7 @@ public class OrdersService(
         context.Orders.Add(order);
 
         await context.SaveChangesAsync();
-        
+
         var simplifiedOrder = new
         {
             order.Id,
@@ -62,9 +67,9 @@ public class OrdersService(
                 item.Quantity
             }).ToList()
         };
-        
+
         await hubContext.Clients.All.SendAsync("ReceiveOrderUpdate", simplifiedOrder);
-        
+
         return order;
     }
 
@@ -136,18 +141,26 @@ public class OrdersService(
         return (orders, totalPages);
     }
 
-    public async Task UpdateOrderStatusAsync(int orderId, OrderStatus status)
+    public async Task UpdateOrderStatusAsync(int id, OrderStatus status)
     {
-        var order = await context.Orders.FirstOrDefaultAsync(order => order.Id == orderId);
+        var order = await context.Orders.FirstOrDefaultAsync(order => order.Id == id);
 
         if (order == null)
-            throw new KeyNotFoundException($"Order with ID {orderId} was not found.");
+            throw new KeyNotFoundException($"Order with ID {id} was not found.");
 
         order.Status = status;
         context.Orders.Update(order);
 
         await context.SaveChangesAsync();
 
-        await hubContext.Clients.All.SendAsync("ReceiveOrderStatusUpdate", orderId, status);
+        await hubContext.Clients.All.SendAsync("ReceiveOrderStatusUpdate", id, status);
+
+        await notificationService.CreateNotificationAsync(
+            "orderStatusUpdate",
+            new Dictionary<string, object>
+            {
+                { "id", id },
+                { "status", status }
+            });
     }
 }

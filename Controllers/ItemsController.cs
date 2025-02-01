@@ -8,13 +8,18 @@ namespace LimitlessFit.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class ItemsController(IItemsService itemsService) : ControllerBase
+[Produces("application/json")]
+public class ItemsController(IItemService itemService) : ControllerBase
 {
     [HttpGet]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetItems([FromQuery] PagingRequest request)
     {
-        var (items, totalPages) = await itemsService.GetAllItemsAsync(request);
-        
+        var (items, totalPages) = await itemService.GetAllItemsAsync(request);
+
         return Ok(new
         {
             items,

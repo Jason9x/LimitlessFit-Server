@@ -10,14 +10,19 @@ namespace LimitlessFit.Controllers;
 [Authorize]
 [ApiController]
 [Route("api/[controller]")]
-public class OrdersController(IOrdersService ordersService) : ControllerBase
+[Produces("application/json")]
+public class OrdersController(IOrderService orderService) : ControllerBase
 {
     [HttpPost]
+    [ProducesResponseType(typeof(Order), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> CreateOrder([FromBody] CreateOrderRequest request)
     {
         try
         {
-            var order = await ordersService.CreateOrderAsync(request);
+            var order = await orderService.CreateOrderAsync(request);
 
             return CreatedAtAction(nameof(GetOrderById), new { id = order.Id }, order);
         }
@@ -36,51 +41,58 @@ public class OrdersController(IOrdersService ordersService) : ControllerBase
     }
 
     [HttpGet("{id:int}")]
+    [ProducesResponseType(typeof(Order), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetOrderById(int id)
     {
-        var order = await ordersService.GetOrderByIdAsync(id);
+        var order = await orderService.GetOrderByIdAsync(id);
 
-        if (order == null) return NotFound(new { MessageKey = "orderNotFound" });
-
-        return Ok(order);
+        return order == null
+            ? NotFound(new { MessageKey = "orderNotFound" })
+            : Ok(order);
     }
 
     [Authorize(Roles = "Admin")]
     [HttpGet("all")]
-    public async Task<IActionResult> GetAllOrders([FromQuery] PagingRequest paging,
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetAllOrders(
+        [FromQuery] PagingRequest paging,
         [FromQuery] OrderFilterCriteria filterCriteria)
     {
-        var (orders, totalPages) =
-            await ordersService.GetAllOrdersAsync(paging, filterCriteria);
+        var (orders, totalPages) = await orderService.GetAllOrdersAsync(paging, filterCriteria);
 
-        return Ok(new
-        {
-            orders,
-            totalPages
-        });
+        return Ok(new { orders, totalPages });
     }
 
     [HttpGet("my-orders")]
-    public async Task<IActionResult> GetMyOrders([FromQuery] PagingRequest paging,
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GetMyOrders(
+        [FromQuery] PagingRequest paging,
         [FromQuery] OrderFilterCriteria filterCriteria)
     {
-        var (orders, totalPages) =
-            await ordersService.GetMyOrdersAsync(paging, filterCriteria);
+        var (orders, totalPages) = await orderService.GetMyOrdersAsync(paging, filterCriteria);
 
-        return Ok(new
-        {
-            orders,
-            totalPages
-        });
+        return Ok(new { orders, totalPages });
     }
 
     [Authorize(Roles = "Admin")]
     [HttpPatch("{id:int}/status")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> UpdateOrderStatus(int id, [FromBody] OrderStatus status)
     {
         try
         {
-            await ordersService.UpdateOrderStatusAsync(id, status);
+            await orderService.UpdateOrderStatusAsync(id, status);
 
             return NoContent();
         }
@@ -99,7 +111,7 @@ public class OrdersController(IOrdersService ordersService) : ControllerBase
     private ObjectResult GetErrorResponse(OrderErrorType errorType, string exceptionMessage)
     {
         var response = new { MessageKey = errorType.ToString(), Message = exceptionMessage };
-
+        
         return errorType switch
         {
             OrderErrorType.InvalidOrder => BadRequest(response),

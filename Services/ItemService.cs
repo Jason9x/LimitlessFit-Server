@@ -6,7 +6,7 @@ using LimitlessFit.Models.Requests;
 
 namespace LimitlessFit.Services;
 
-public class ItemsService(ApplicationDbContext context) : IItemsService
+public class ItemService(ApplicationDbContext context) : IItemService
 {
     public async Task<(List<Item> Items, int TotalPages)> GetAllItemsAsync(PagingRequest request)
     {

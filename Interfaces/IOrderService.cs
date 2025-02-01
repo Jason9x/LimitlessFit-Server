@@ -4,7 +4,7 @@ using LimitlessFit.Models.Requests;
 
 namespace LimitlessFit.Interfaces;
 
-public interface IOrdersService
+public interface IOrderService
 {
     Task<Order> CreateOrderAsync(CreateOrderRequest request);
     Task<Order?> GetOrderByIdAsync(int id);
@@ -15,5 +15,5 @@ public interface IOrdersService
     Task<(List<Order> orders, int totalPages)> GetAllOrdersAsync(PagingRequest paging,
         OrderFilterCriteria filterCriteria);
 
-    Task UpdateOrderStatusAsync(int orderId, OrderStatus status);
+    Task UpdateOrderStatusAsync(int id, OrderStatus status);
 }
