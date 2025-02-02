@@ -13,9 +13,8 @@ public class NotificationService(
     ApplicationDbContext context,
     IHubContext<NotificationHub> hubContext) : INotificationService
 {
-    public async Task CreateNotificationAsync(string messageKey, Dictionary<string, object>? additionalData = null)
+    public async Task CreateNotificationAsync(int userId, string messageKey, Dictionary<string, object>? additionalData = null)
     {
-        var userId = authService.GetUserIdFromClaims();
         var notification = new Notification
         {
             UserId = userId,

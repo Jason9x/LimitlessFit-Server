@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
 using DotNetEnv;
@@ -8,6 +9,7 @@ using LimitlessFit.Data;
 using LimitlessFit.Interfaces;
 using LimitlessFit.Services;
 using LimitlessFit.Services.Hubs;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -80,6 +82,30 @@ builder.Services.AddAuthentication("Bearer")
             ValidAudience = jwtAudience,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey ?? string.Empty))
         };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                context.Token = context.Request.Cookies["jwtToken"];
+
+                return Task.CompletedTask;
+            },
+
+            OnTokenValidated = context =>
+            {
+                var userId = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
+
+                if (userId is null)
+                    return Task.CompletedTask;
+
+                context.HttpContext.User = new ClaimsPrincipal(
+                    new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, userId)])
+                );
+
+                return Task.CompletedTask;
+            }
+        };
     });
 
 builder.Services.AddCors(options =>
@@ -120,5 +146,6 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.MapHub<OrderUpdateHub>("/orderUpdateHub");
+app.MapHub<NotificationHub>("/notificationHub");
 
 app.Run();

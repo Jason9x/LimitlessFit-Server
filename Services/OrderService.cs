@@ -156,6 +156,7 @@ public class OrderService(
         await hubContext.Clients.All.SendAsync("ReceiveOrderStatusUpdate", id, status);
 
         await notificationService.CreateNotificationAsync(
+            order.UserId,
             "orderStatusUpdate",
             new Dictionary<string, object>
             {

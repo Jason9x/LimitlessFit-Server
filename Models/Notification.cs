@@ -17,6 +17,7 @@ public class Notification
 
     [Required] public DateTime CreatedAt { get; init; }
 
+    
     [StringLength(4000)]
     public string? AdditionalData { get; set; }
 }
