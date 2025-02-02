@@ -26,6 +26,7 @@ public class NotificationService(
         };
 
         context.Notifications.Add(notification);
+        
         await context.SaveChangesAsync();
 
         await hubContext.Clients
