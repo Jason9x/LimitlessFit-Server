@@ -5,5 +5,5 @@ namespace LimitlessFit.Interfaces;
 
 public interface IUserService
 {
-    Task<(List<UserDto> orders, int totalPages)> GetUsersAsync(UserSearchRequest request);
+    Task<(List<UserDto> users, int totalPages)> GetUsersAsync(UserSearchRequest request);
 }
