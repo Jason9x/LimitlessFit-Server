@@ -1,10 +1,11 @@
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using LimitlessFit.Data;
 using LimitlessFit.Interfaces;
 using LimitlessFit.Models;
+using LimitlessFit.Models.Dtos;
 using LimitlessFit.Services.Hubs;
-using Newtonsoft.Json;
 
 namespace LimitlessFit.Services;
 
@@ -13,7 +14,8 @@ public class NotificationService(
     ApplicationDbContext context,
     IHubContext<NotificationHub> hubContext) : INotificationService
 {
-    public async Task CreateNotificationAsync(int userId, string messageKey, Dictionary<string, object>? additionalData = null)
+    public async Task CreateNotificationAsync(int userId, string messageKey,
+        Dictionary<string, object>? additionalData = null)
     {
         var notification = new Notification
         {
@@ -26,7 +28,7 @@ public class NotificationService(
         };
 
         context.Notifications.Add(notification);
-        
+
         await context.SaveChangesAsync();
 
         await hubContext.Clients
@@ -34,13 +36,20 @@ public class NotificationService(
             .SendAsync("NewNotification", notification);
     }
 
-    public async Task<List<Notification>> GetNotificationsAsync()
+    public async Task<List<NotificationDto>> GetNotificationsAsync()
     {
         var userId = authService.GetUserIdFromClaims();
 
         return await context.Notifications
+            .AsNoTracking()
             .Where(notification => notification.UserId == userId)
             .OrderByDescending(notification => notification.CreatedAt)
+            .Select(notification => new NotificationDto(
+                notification.Id,
+                notification.MessageKey ?? string.Empty,
+                notification.CreatedAt,
+                notification.IsRead,
+                notification.AdditionalData))
             .ToListAsync();
     }
 

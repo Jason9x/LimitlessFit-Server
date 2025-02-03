@@ -90,28 +90,15 @@ public class OrdersController(IOrderService orderService) : ControllerBase
     [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> UpdateOrderStatus(int id, [FromBody] OrderStatus status)
     {
-        try
-        {
-            await orderService.UpdateOrderStatusAsync(id, status);
+        await orderService.UpdateOrderStatusAsync(id, status);
 
-            return NoContent();
-        }
-
-        catch (KeyNotFoundException)
-        {
-            return NotFound();
-        }
-
-        catch (Exception exception)
-        {
-            return StatusCode(500, exception.Message);
-        }
+        return NoContent();
     }
 
     private ObjectResult GetErrorResponse(OrderErrorType errorType, string exceptionMessage)
     {
         var response = new { MessageKey = errorType.ToString(), Message = exceptionMessage };
-        
+
         return errorType switch
         {
             OrderErrorType.InvalidOrder => BadRequest(response),

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using LimitlessFit.Interfaces;
 using LimitlessFit.Models;
+using LimitlessFit.Models.Dtos;
 
 namespace LimitlessFit.Controllers;
 
@@ -14,7 +15,7 @@ public class NotificationsController(INotificationService notificationService) :
     [HttpGet]
     [ProducesResponseType(typeof(List<Notification>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<List<Notification>>> GetNotifications()
+    public async Task<ActionResult<List<NotificationDto>>> GetNotifications()
     {
         return await notificationService.GetNotificationsAsync();
     }

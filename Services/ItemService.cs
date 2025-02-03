@@ -14,6 +14,7 @@ public class ItemService(ApplicationDbContext context) : IItemService
         var totalPages = (int)Math.Ceiling(totalItems / (double)request.PageSize);
 
         var items = await context.Items
+            .AsNoTracking()
             .Skip((request.PageNumber - 1) * request.PageSize)
             .Take(request.PageSize)
             .ToListAsync();

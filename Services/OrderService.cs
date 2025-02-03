@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.SignalR;
 using LimitlessFit.Data;
 using LimitlessFit.Interfaces;
+using LimitlessFit.Models.Dtos.Order;
 using LimitlessFit.Models.Enums.Order;
 using LimitlessFit.Models.Orders;
 using LimitlessFit.Models.Requests;
@@ -17,7 +18,7 @@ public class OrderService(
     INotificationService notificationService,
     IHubContext<OrderUpdateHub> hubContext) : IOrderService
 {
-    public async Task<Order> CreateOrderAsync(CreateOrderRequest request)
+    public async Task<OrderDetailDto> CreateOrderAsync(CreateOrderRequest request)
     {
         if (request.Items == null || request.Items.Count == 0)
             throw new ArgumentException("Order must include at least one item.");
@@ -55,36 +56,58 @@ public class OrderService(
 
         await context.SaveChangesAsync();
 
-        var simplifiedOrder = new
-        {
+        var orderDetailDto = new OrderDetailDto(
             order.Id,
-            order.Status,
-            order.Date,
             order.TotalPrice,
-            Items = order.Items.Select(item => new
-            {
+            order.Date,
+            order.Status,
+            order.Items.Select(item => new OrderItemDto(
                 item.ItemId,
-                item.Quantity
-            }).ToList()
-        };
+                item.Item?.ImageUrl ?? string.Empty,
+                item.Item?.NameKey ?? "Unknown",
+                item.Quantity,
+                item.Item?.Price ?? 0m
+            )).ToList()
+        );
 
-        await hubContext.Clients.All.SendAsync("ReceiveOrderUpdate", simplifiedOrder);
+        await hubContext.Clients.All.SendAsync("ReceiveOrderUpdate", orderDetailDto);
 
-        return order;
+        return orderDetailDto;
     }
 
-    public async Task<Order?> GetOrderByIdAsync(int id)
+    public async Task<OrderDetailDto?> GetOrderByIdAsync(int id)
     {
         return await context.Orders
-            .Include(order => order.Items)
-            .ThenInclude(item => item.Item)
-            .FirstOrDefaultAsync(order => order.Id == id);
+            .AsNoTracking()
+            .Where(order => order.Id == id)
+            .Select(order => new OrderDetailDto(
+                order.Id,
+                order.TotalPrice,
+                order.Date,
+                order.Status,
+                order.Items.Select(item => item.Item != null
+                        ? new OrderItemDto(
+                            item.Item.Id,
+                            item.Item.ImageUrl ?? string.Empty,
+                            item.Item.NameKey ?? "Unknown",
+                            item.Quantity,
+                            item.Item.Price)
+                        : new OrderItemDto(
+                            0,
+                            string.Empty,
+                            "N/A",
+                            item.Quantity,
+                            0m)
+                    )
+                    .ToList()
+            ))
+            .FirstOrDefaultAsync();
     }
 
-    public async Task<(List<Order> orders, int totalPages)> GetAllOrdersAsync(PagingRequest paging,
+    public async Task<(List<OrderSummaryDto> orders, int totalPages)> GetAllOrdersAsync(PagingRequest paging,
         OrderFilterCriteria filterCriteria)
     {
-        var query = context.Orders.AsQueryable();
+        var query = context.Orders.AsNoTracking().AsQueryable();
 
         if (filterCriteria.StartDate != null)
             query = query.Where(order => order.Date >= filterCriteria.StartDate);
@@ -101,21 +124,46 @@ public class OrderService(
         var totalPages = (int)Math.Ceiling((double)totalItems / paging.PageSize);
 
         var orders = await query
+            .AsNoTracking()
             .Include(order => order.User)
             .Include(order => order.Items)
             .ThenInclude(item => item.Item)
             .Skip((paging.PageNumber - 1) * paging.PageSize)
             .Take(paging.PageSize)
+            .Select(order => new OrderSummaryDto(
+                order.Id,
+                order.User != null ? order.User.Name : "Unknown",
+                order.Date,
+                order.TotalPrice,
+                order.Status,
+                order.Items.Select(item => item.Item != null
+                        ? new OrderItemSummaryDto(
+                            item.Item.Id,
+                            item.Item.ImageUrl,
+                            item.Item.NameKey ?? string.Empty,
+                            item.Item.Price,
+                            item.Item.DescriptionKey ?? string.Empty,
+                            item.Quantity
+                        )
+                        : new OrderItemSummaryDto(
+                            0,
+                            string.Empty,
+                            string.Empty,
+                            0,
+                            string.Empty,
+                            item.Quantity))
+                    .ToList()
+            ))
             .ToListAsync();
 
         return (orders, totalPages);
     }
 
-    public async Task<(List<Order> orders, int totalPages)> GetMyOrdersAsync(PagingRequest paging,
+    public async Task<(List<MyOrderSummaryDto> orders, int totalPages)> GetMyOrdersAsync(PagingRequest paging,
         OrderFilterCriteria filterCriteria)
     {
         var userId = authService.GetUserIdFromClaims();
-        var query = context.Orders.Where(order => order.UserId == userId);
+        var query = context.Orders.AsNoTracking().Where(order => order.UserId == userId);
 
         if (filterCriteria.StartDate != null)
             query = query.Where(order => order.Date >= filterCriteria.StartDate);
@@ -132,8 +180,12 @@ public class OrderService(
         var totalPages = (int)Math.Ceiling((double)totalItems / paging.PageSize);
 
         var orders = await query
-            .Include(order => order.Items)
-            .ThenInclude(item => item.Item)
+            .Select(order => new MyOrderSummaryDto(
+                order.Id,
+                order.Date,
+                order.TotalPrice,
+                order.Status
+            ))
             .Skip((paging.PageNumber - 1) * paging.PageSize)
             .Take(paging.PageSize)
             .ToListAsync();
@@ -160,7 +212,7 @@ public class OrderService(
             "orderStatusUpdate",
             new Dictionary<string, object>
             {
-                { "id", id },
+                { "orderId", id },
                 { "status", status }
             });
     }
