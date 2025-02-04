@@ -1,15 +1,14 @@
-using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
 using DotNetEnv;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using LimitlessFit.Data;
 using LimitlessFit.Interfaces;
 using LimitlessFit.Services;
 using LimitlessFit.Services.Hubs;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -88,21 +87,10 @@ builder.Services.AddAuthentication("Bearer")
         {
             OnMessageReceived = context =>
             {
-                context.Token = context.Request.Cookies["jwtToken"];
+                var accessToken = context.Request.Query["access_token"];
 
-                return Task.CompletedTask;
-            },
-
-            OnTokenValidated = context =>
-            {
-                var userId = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
-
-                if (userId is null)
-                    return Task.CompletedTask;
-
-                context.HttpContext.User = new ClaimsPrincipal(
-                    new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, userId)])
-                );
+                if (!string.IsNullOrEmpty(accessToken))
+                    context.Token = accessToken;
 
                 return Task.CompletedTask;
             }

@@ -7,7 +7,7 @@ namespace LimitlessFit.Interfaces;
 
 public interface IOrderService
 {
-    Task<OrderDetailDto> CreateOrderAsync(CreateOrderRequest request);
+    Task<OrderSummaryDto> CreateOrderAsync(CreateOrderRequest request);
     Task<OrderDetailDto?> GetOrderByIdAsync(int id);
 
     Task<(List<OrderSummaryDto> orders, int totalPages)> GetAllOrdersAsync(PagingRequest paging,

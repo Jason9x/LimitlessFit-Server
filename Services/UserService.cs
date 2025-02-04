@@ -32,8 +32,33 @@ public class UserService(ApplicationDbContext context) : IUserService
         return (users, totalPages);
     }
 
+    public async Task UpdateUserRoleAsync(int id, int role)
+    {
+        var user = await context.Users.FindAsync(id);
+
+        if (user == null)
+            throw new KeyNotFoundException($"User with Id {id} was not found.");
+
+        user.RoleId = role;
+
+        context.Users.Update(user);
+
+        await context.SaveChangesAsync();
+    }
+
+    public async Task<string> GetUserNameByIdAsync(int id)
+    {
+        var user = await context.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(user => user.Id == id);
+
+        return user?.Name ?? string.Empty;
+    }
+
     private IQueryable<User> ApplySearchFilter(IQueryable<User> query, string? searchTerm)
     {
-        return string.IsNullOrWhiteSpace(searchTerm) ? query : context.Users.Where(user => user.Name.Contains(searchTerm.Trim()));
+        return string.IsNullOrWhiteSpace(searchTerm)
+            ? query
+            : context.Users.Where(user => user.Name.Contains(searchTerm.Trim()));
     }
 }

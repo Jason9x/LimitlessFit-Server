@@ -18,7 +18,7 @@ public class User
 
     [Required] [MaxLength(128)] public string? Password { get; init; }
 
-    [Required] public int RoleId { get; init; }
+    [Required] public int RoleId { get; set; }
 
     [ForeignKey(nameof(RoleId))] public Role? Role { get; init; }
 

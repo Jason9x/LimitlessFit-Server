@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.SignalR;
 using LimitlessFit.Data;
@@ -11,14 +10,14 @@ using LimitlessFit.Services.Hubs;
 
 namespace LimitlessFit.Services;
 
-[Authorize]
 public class OrderService(
     ApplicationDbContext context,
     IAuthService authService,
+    IUserService userService,
     INotificationService notificationService,
     IHubContext<OrderUpdateHub> hubContext) : IOrderService
 {
-    public async Task<OrderDetailDto> CreateOrderAsync(CreateOrderRequest request)
+    public async Task<OrderSummaryDto> CreateOrderAsync(CreateOrderRequest request)
     {
         if (request.Items == null || request.Items.Count == 0)
             throw new ArgumentException("Order must include at least one item.");
@@ -38,6 +37,7 @@ public class OrderService(
         );
 
         var userId = authService.GetUserIdFromClaims();
+        var username = await userService.GetUserNameByIdAsync(userId);
 
         var order = new Order
         {
@@ -56,23 +56,34 @@ public class OrderService(
 
         await context.SaveChangesAsync();
 
-        var orderDetailDto = new OrderDetailDto(
+        var orderSummaryDto = new OrderSummaryDto(
             order.Id,
-            order.TotalPrice,
+            username,
             order.Date,
+            order.TotalPrice,
             order.Status,
-            order.Items.Select(item => new OrderItemDto(
-                item.ItemId,
-                item.Item?.ImageUrl ?? string.Empty,
-                item.Item?.NameKey ?? "Unknown",
-                item.Quantity,
-                item.Item?.Price ?? 0m
-            )).ToList()
+            order.Items.Select(item => item.Item != null
+                    ? new OrderItemSummaryDto(
+                        item.Item.Id,
+                        item.Item.ImageUrl,
+                        item.Item.NameKey ?? string.Empty,
+                        item.Item.Price,
+                        item.Item.DescriptionKey ?? string.Empty,
+                        item.Quantity
+                    )
+                    : new OrderItemSummaryDto(
+                        0,
+                        string.Empty,
+                        string.Empty,
+                        0,
+                        string.Empty,
+                        item.Quantity))
+                .ToList()
         );
 
-        await hubContext.Clients.All.SendAsync("ReceiveOrderUpdate", orderDetailDto);
+        await hubContext.Clients.All.SendAsync("ReceiveOrderUpdate", orderSummaryDto);
 
-        return orderDetailDto;
+        return orderSummaryDto;
     }
 
     public async Task<OrderDetailDto?> GetOrderByIdAsync(int id)
@@ -89,7 +100,7 @@ public class OrderService(
                         ? new OrderItemDto(
                             item.Item.Id,
                             item.Item.ImageUrl ?? string.Empty,
-                            item.Item.NameKey ?? "Unknown",
+                            item.Item.NameKey ?? string.Empty,
                             item.Quantity,
                             item.Item.Price)
                         : new OrderItemDto(
@@ -132,7 +143,7 @@ public class OrderService(
             .Take(paging.PageSize)
             .Select(order => new OrderSummaryDto(
                 order.Id,
-                order.User != null ? order.User.Name : "Unknown",
+                order.User != null ? order.User.Name : string.Empty,
                 order.Date,
                 order.TotalPrice,
                 order.Status,
@@ -198,7 +209,7 @@ public class OrderService(
         var order = await context.Orders.FirstOrDefaultAsync(order => order.Id == id);
 
         if (order == null)
-            throw new KeyNotFoundException($"Order with ID {id} was not found.");
+            throw new KeyNotFoundException($"Order with Id {id} was not found.");
 
         order.Status = status;
         context.Orders.Update(order);

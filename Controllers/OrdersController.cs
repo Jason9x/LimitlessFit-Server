@@ -7,9 +7,9 @@ using LimitlessFit.Models.Requests;
 
 namespace LimitlessFit.Controllers;
 
-[Authorize]
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 [Produces("application/json")]
 public class OrdersController(IOrderService orderService) : ControllerBase
 {
@@ -53,8 +53,8 @@ public class OrdersController(IOrderService orderService) : ControllerBase
             : Ok(order);
     }
 
-    [Authorize(Roles = "Admin")]
     [HttpGet("all")]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -81,8 +81,8 @@ public class OrdersController(IOrderService orderService) : ControllerBase
         return Ok(new { orders, totalPages });
     }
 
-    [Authorize(Roles = "Admin")]
     [HttpPatch("{id:int}/status")]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
