@@ -19,12 +19,16 @@ public class User
     [Required] [MaxLength(128)] public string? Password { get; init; }
 
     [Required] public int RoleId { get; set; }
-
     [ForeignKey(nameof(RoleId))] public Role? Role { get; init; }
 
     [Required] public int FailedLoginAttempts { get; set; }
 
+    [MaxLength(200)]
+    public string? RefreshToken { get; set; }
+    public DateTime? RefreshTokenExpiryTime { get; set; }
+
     public DateTime? LockoutEnd { get; set; }
+    
 
     public List<Order> Orders { get; init; } = [];
 }

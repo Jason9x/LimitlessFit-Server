@@ -1,30 +1,36 @@
 ﻿using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.SignalR;
 using System.Text.RegularExpressions;
 using static BCrypt.Net.BCrypt;
 using LimitlessFit.Data;
 using LimitlessFit.Helpers;
 using LimitlessFit.Interfaces;
 using LimitlessFit.Models;
+using LimitlessFit.Models.Dtos;
 using LimitlessFit.Models.Enums.Auth;
 using LimitlessFit.Models.Requests.Auth;
+using LimitlessFit.Services.Hubs;
 
 namespace LimitlessFit.Services;
 
-public partial class AuthService(ApplicationDbContext context, IHttpContextAccessor httpContextAccessor) : IAuthService
+public partial class AuthService(
+    ApplicationDbContext context,
+    IHttpContextAccessor httpContextAccessor,
+    IHubContext<UserHub> hubContext) : IAuthService
 {
     private const int MaxFailedAttempts = 5;
     private const int LockoutMinutes = 15;
 
-    public async Task<(LoginResult result, string? token)> Login(LoginRequest request)
+    public async Task<(LoginResult result, string? accessToken, string? refreshToken)> Login(LoginRequest request)
     {
         var user = await context.Users.Include(user => user.Role)
             .FirstOrDefaultAsync(user => user.Email == request.Email);
 
-        if (user == null) return (LoginResult.UserNotFound, null);
+        if (user == null) return (LoginResult.UserNotFound, null, null);
 
         if (user.LockoutEnd != null && user.LockoutEnd > DateTime.UtcNow)
-            return (LoginResult.AccountLocked, null);
+            return (LoginResult.AccountLocked, null, null);
 
         var isPasswordValid = Verify(request.Password, user.Password);
 
@@ -32,35 +38,36 @@ public partial class AuthService(ApplicationDbContext context, IHttpContextAcces
         {
             await HandleFailedLoginAsync(user);
 
-            return (LoginResult.InvalidPassword, null);
+            return (LoginResult.InvalidPassword, null, null);
         }
 
         await ResetFailedLoginAttemptsAsync(user);
 
-        var token = JwtTokenHelper.GenerateJwtToken(user);
+        var (accessToken, refreshToken) = JwtTokenHelper.GenerateTokens(user);
 
-        return (LoginResult.Success, token);
+        return (LoginResult.Success, accessToken, refreshToken);
     }
 
-    public async Task<(RegistrationResult result, string? token)> RegisterAsync(RegisterRequest request)
+    public async Task<(RegistrationResult result, string? accessToken, string? refreshToken)> RegisterAsync(
+        RegisterRequest request)
     {
-        if (!ValidateEmail(request.Email)) return (RegistrationResult.InvalidEmail, null);
+        if (!ValidateEmail(request.Email)) return (RegistrationResult.InvalidEmail, null, null);
 
-        if (!ValidateName(request.Name)) return (RegistrationResult.InvalidName, null);
+        if (!ValidateName(request.Name)) return (RegistrationResult.InvalidName, null, null);
 
         if (!ValidatePasswordPolicy(request.Password))
-            return (RegistrationResult.InvalidPassword, null);
+            return (RegistrationResult.InvalidPassword, null, null);
 
         var userExists = await context.Users.AnyAsync(user => user.Email == request.Email);
 
-        if (userExists) return (RegistrationResult.UserAlreadyExists, null);
+        if (userExists) return (RegistrationResult.UserAlreadyExists, null, null);
 
         var tag = await GenerateUniqueTagAsync(request.Name);
         var taggedName = $"{request.Name}#{tag}";
-        
+
         var defaultRole = await context.Roles.FirstOrDefaultAsync(role => role.Name == "User");
 
-        if (defaultRole == null) return (RegistrationResult.Failure, null);
+        if (defaultRole == null) return (RegistrationResult.Failure, null, null);
 
         var user = new User
         {
@@ -76,11 +83,35 @@ public partial class AuthService(ApplicationDbContext context, IHttpContextAcces
 
         var saveResult = await context.SaveChangesAsync();
 
-        if (saveResult == 0) return (RegistrationResult.Failure, null);
+        if (saveResult == 0) return (RegistrationResult.Failure, null, null);
 
-        var token = JwtTokenHelper.GenerateJwtToken(user);
+        var (accessToken, refreshToken) = JwtTokenHelper.GenerateTokens(user);
+        
+        await hubContext.Clients.All.SendAsync("UserAdded", new UserDto(
+            user.Id,
+            user.Name,
+            user.Email ?? string.Empty,
+            user.RoleId
+        ));
 
-        return (RegistrationResult.Success, token);
+        return (RegistrationResult.Success, accessToken, refreshToken);
+    }
+
+    public async Task<string?> RefreshTokenAsync()
+    {
+        var userId = GetUserIdFromClaims();
+        var user = await context.Users
+            .Include(user => user.Role)
+            .FirstOrDefaultAsync(user => user.Id == userId);
+
+        if (user?.RefreshToken == null || user.RefreshTokenExpiryTime < DateTime.UtcNow) return null;
+
+        var (accessToken, refreshToken) = JwtTokenHelper.GenerateTokens(user);
+
+        user.RefreshToken = refreshToken;
+        user.RefreshTokenExpiryTime = DateTime.UtcNow.AddMinutes(15);
+
+        return accessToken;
     }
 
     public int GetUserIdFromClaims()

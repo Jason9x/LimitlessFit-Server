@@ -212,11 +212,12 @@ public class OrderService(
             throw new KeyNotFoundException($"Order with Id {id} was not found.");
 
         order.Status = status;
+
         context.Orders.Update(order);
 
         await context.SaveChangesAsync();
 
-        await hubContext.Clients.All.SendAsync("ReceiveOrderStatusUpdate", id, status);
+        await hubContext.Clients.All.SendAsync("ReceivedOrderStatusUpdate", id, status);
 
         await notificationService.CreateNotificationAsync(
             order.UserId,

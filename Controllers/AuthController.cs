@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using LimitlessFit.Interfaces;
 using LimitlessFit.Models.Enums.Auth;
 using LimitlessFit.Models.Requests.Auth;
@@ -18,11 +19,11 @@ public class AuthController(IAuthService authService) : ControllerBase
     [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Login(LoginRequest request)
     {
-        var (result, token) = await authService.Login(request);
+        var (result, accessToken, refreshToken) = await authService.Login(request);
 
         return result switch
         {
-            LoginResult.Success => Ok(new { Token = token }),
+            LoginResult.Success => Ok(new { AccessToken = accessToken, RefreshToken = refreshToken }),
             LoginResult.UserNotFound => NotFound(new { MessageKey = "userNotFound" }),
             LoginResult.InvalidPassword => Unauthorized(new { MessageKey = "invalidPassword" }),
             LoginResult.AccountLocked => StatusCode(403, new { MessageKey = "accountLocked" }),
@@ -37,16 +38,30 @@ public class AuthController(IAuthService authService) : ControllerBase
     [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Register(RegisterRequest request)
     {
-        var (result, token) = await authService.RegisterAsync(request);
+        var (result, accessToken, refreshToken) = await authService.RegisterAsync(request);
 
         return result switch
         {
-            RegistrationResult.Success => Ok(new { Token = token }),
+            RegistrationResult.Success => Ok(new { AccessToken = accessToken, RefreshToken = refreshToken }),
             RegistrationResult.UserAlreadyExists => Conflict(new { MessageKey = "userAlreadyExists" }),
             RegistrationResult.InvalidPassword => BadRequest(new { MessageKey = "passwordRequirementsNotMet" }),
             RegistrationResult.InvalidEmail => BadRequest(new { MessageKey = "invalidEmail" }),
             RegistrationResult.InvalidName => BadRequest(new { MessageKey = "invalidName" }),
             _ => StatusCode(500, new { MessageKey = "registrationFailed" })
         };
+    }
+
+    [HttpPost("refresh-token")]
+    [Authorize(AuthenticationSchemes = "Bearer,RefreshToken")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> RefreshToken()
+    {
+        var accessToken = await authService.RefreshTokenAsync();
+
+        if (accessToken == null) return Unauthorized();
+
+        return Ok(new { AccessToken = accessToken });
     }
 }

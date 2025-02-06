@@ -12,7 +12,6 @@ public class OrderItem
     [ForeignKey(nameof(OrderId))] public Order? Order { get; init; }
 
     [Required] public int ItemId { get; init; }
-
     [ForeignKey(nameof(ItemId))] public Item? Item { get; init; }
 
     [Required] public int Quantity { get; init; }

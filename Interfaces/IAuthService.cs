@@ -1,11 +1,15 @@
 ﻿using LimitlessFit.Models.Enums.Auth;
 using LimitlessFit.Models.Requests.Auth;
 
-namespace LimitlessFit.Interfaces;
-
-public interface IAuthService
+namespace LimitlessFit.Interfaces
 {
-    Task<(RegistrationResult result, string? token)> RegisterAsync(RegisterRequest request);
-    Task<(LoginResult result, string? token)> Login(LoginRequest request);
-    int GetUserIdFromClaims();
+    public interface IAuthService
+    {
+        Task<(RegistrationResult result, string? accessToken, string? refreshToken)> RegisterAsync(
+            RegisterRequest request);
+
+        Task<(LoginResult result, string? accessToken, string? refreshToken)> Login(LoginRequest request);
+        Task<string?> RefreshTokenAsync();
+        int GetUserIdFromClaims();
+    }
 }
