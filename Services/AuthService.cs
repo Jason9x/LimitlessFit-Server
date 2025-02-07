@@ -8,6 +8,7 @@ using LimitlessFit.Helpers;
 using LimitlessFit.Interfaces;
 using LimitlessFit.Models;
 using LimitlessFit.Models.Dtos;
+using LimitlessFit.Models.Enums;
 using LimitlessFit.Models.Enums.Auth;
 using LimitlessFit.Models.Requests.Auth;
 using LimitlessFit.Services.Hubs;
@@ -91,7 +92,7 @@ public partial class AuthService(
             user.Id,
             user.Name,
             user.Email ?? string.Empty,
-            user.RoleId
+            (RoleEnum)user.RoleId
         ));
 
         return (RegistrationResult.Success, accessToken, refreshToken);

@@ -1,6 +1,6 @@
-using LimitlessFit.Models.Orders;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using LimitlessFit.Models.Orders;
 
 namespace LimitlessFit.Models;
 
@@ -23,12 +23,11 @@ public class User
 
     [Required] public int FailedLoginAttempts { get; set; }
 
-    [MaxLength(200)]
-    public string? RefreshToken { get; set; }
+    [MaxLength(200)] public string? RefreshToken { get; set; }
     public DateTime? RefreshTokenExpiryTime { get; set; }
 
     public DateTime? LockoutEnd { get; set; }
-    
+
 
     public List<Order> Orders { get; init; } = [];
 }

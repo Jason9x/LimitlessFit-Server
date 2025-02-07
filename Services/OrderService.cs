@@ -81,7 +81,7 @@ public class OrderService(
                 .ToList()
         );
 
-        await hubContext.Clients.All.SendAsync("ReceiveOrderUpdate", orderSummaryDto);
+        await hubContext.Clients.All.SendAsync("AddNewOrder", orderSummaryDto);
 
         return orderSummaryDto;
     }

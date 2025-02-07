@@ -7,7 +7,7 @@ namespace LimitlessFit.Middleware
     {
         public async Task Invoke(HttpContext context)
         {
-            if (context.User.Identity?.IsAuthenticated != true)
+            if (context.User.Identity is not { IsAuthenticated: true })
             {
                 await next(context);
                 return;
@@ -24,18 +24,10 @@ namespace LimitlessFit.Middleware
             using (var scope = serviceProvider.CreateScope())
             {
                 var userService = scope.ServiceProvider.GetRequiredService<IUserService>();
-
-                var role = await userService.GetUserRoleByIdAsync(int.Parse(userId));
-
-                if (string.IsNullOrEmpty(role))
-                {
-                    await next(context);
-                    return;
-                }
-
+                var role = await userService.GetUserRoleIdByIdAsync(int.Parse(userId));
                 var claimsIdentity = (ClaimsIdentity)context.User.Identity;
 
-                claimsIdentity.AddClaim(new Claim(ClaimTypes.Role, role));
+                claimsIdentity.AddClaim(new Claim(ClaimTypes.Role, role.ToString()));
             }
 
             await next(context);
