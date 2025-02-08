@@ -6,10 +6,9 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication;
 using LimitlessFit.Data;
 using LimitlessFit.Interfaces;
-using LimitlessFit.Middleware;
 using LimitlessFit.Models.Enums;
 using LimitlessFit.Services;
 using LimitlessFit.Services.Hubs;
@@ -41,7 +40,7 @@ void ConfigureServices(IServiceCollection services)
 
     services.AddHttpContextAccessor();
 
-    services.AddSingleton<IAuthorizationHandler, RoleEnumHandler>();
+    services.AddScoped<IClaimsTransformation, DynamicRoleClaimsTransformer>();
     services.AddScoped<IAuthService, AuthService>();
     services.AddScoped<IItemService, ItemService>();
     services.AddScoped<IOrderService, OrderService>();
@@ -113,11 +112,8 @@ void ConfigureAuthentication(IServiceCollection services)
     var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER");
     var jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE");
 
-    builder.Services.AddAuthorization(options =>
-    {
-        options.AddPolicy("AdminPolicy", policy =>
-            policy.Requirements.Add(new RoleEnumRequirement(RoleEnum.Admin)));
-    });
+    builder.Services.AddAuthorizationBuilder()
+        .AddPolicy("AdminPolicy", policy => policy.RequireRole(RoleEnum.Admin.ToString()));
 
     services.AddAuthentication("Bearer")
         .AddJwtBearer("Bearer", options =>
@@ -139,8 +135,7 @@ void ConfigureAuthentication(IServiceCollection services)
                 {
                     var accessToken = context.Request.Query["access_token"];
 
-                    if (!string.IsNullOrEmpty(accessToken))
-                        context.Token = accessToken;
+                    if (!string.IsNullOrEmpty(accessToken)) context.Token = accessToken;
 
                     return Task.CompletedTask;
                 }
@@ -175,7 +170,6 @@ void ConfigureAppPipeline(WebApplication webApplication)
     webApplication.UseCors("AllowSpecificOrigins");
     webApplication.UseHttpsRedirection();
     webApplication.UseAuthentication();
-    webApplication.UseMiddleware<DynamicRoleMiddleware>();
     webApplication.UseAuthorization();
     webApplication.MapControllers();
 

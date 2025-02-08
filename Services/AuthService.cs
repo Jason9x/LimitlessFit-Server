@@ -87,7 +87,7 @@ public partial class AuthService(
         if (saveResult == 0) return (RegistrationResult.Failure, null, null);
 
         var (accessToken, refreshToken) = JwtTokenHelper.GenerateTokens(user);
-        
+
         await hubContext.Clients.All.SendAsync("UserAdded", new UserDto(
             user.Id,
             user.Name,
@@ -112,16 +112,24 @@ public partial class AuthService(
         user.RefreshToken = refreshToken;
         user.RefreshTokenExpiryTime = DateTime.UtcNow.AddMinutes(15);
 
+        await context.SaveChangesAsync();
+        
         return accessToken;
     }
 
     public int GetUserIdFromClaims()
     {
-        var userIdClaim = httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier);
+        var httpContext = httpContextAccessor.HttpContext;
 
-        if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var userId)) return userId;
+        if (httpContext?.User.Identity is not { IsAuthenticated: true })
+            throw new UnauthorizedAccessException("User is not authenticated.");
 
-        throw new UnauthorizedAccessException("User not authenticated");
+        var userIdClaim = httpContext.User.FindFirst(ClaimTypes.NameIdentifier);
+
+        if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
+            throw new UnauthorizedAccessException("User Id claim is missing or invalid.");
+
+        return userId;
     }
 
     private async Task<string> GenerateUniqueTagAsync(string? name)

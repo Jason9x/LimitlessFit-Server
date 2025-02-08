@@ -52,7 +52,6 @@ public class AuthController(IAuthService authService) : ControllerBase
     }
 
     [HttpPost("refresh-token")]
-    [Authorize(AuthenticationSchemes = "Bearer")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
