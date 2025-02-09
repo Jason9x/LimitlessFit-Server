@@ -16,7 +16,7 @@ public class User
     [MaxLength(255)]
     public string? Email { get; init; }
 
-    [Required] [MaxLength(128)] public string? Password { get; init; }
+    [Required] [MaxLength(128)] public string? Password { get; set; }
 
     [Required] public int RoleId { get; set; }
     [ForeignKey(nameof(RoleId))] public Role? Role { get; init; }
@@ -27,6 +27,9 @@ public class User
     public DateTime? RefreshTokenExpiryTime { get; set; }
 
     public DateTime? LockoutEnd { get; set; }
+
+    [MaxLength(255)] public string? PasswordResetToken { get; set; }
+    public DateTime? PasswordResetTokenExpiry { get; set; }
 
 
     public List<Order> Orders { get; init; } = [];

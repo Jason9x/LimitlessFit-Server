@@ -1,7 +1,6 @@
 using System.Text;
 using System.Text.Json.Serialization;
 using DotNetEnv;
-using LimitlessFit.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Microsoft.EntityFrameworkCore;
@@ -9,9 +8,11 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication;
 using LimitlessFit.Data;
 using LimitlessFit.Interfaces;
+using LimitlessFit.Models;
 using LimitlessFit.Models.Enums;
 using LimitlessFit.Services;
 using LimitlessFit.Services.Hubs;
+using LimitlessFit.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -40,12 +41,24 @@ void ConfigureServices(IServiceCollection services)
 
     services.AddHttpContextAccessor();
 
+    builder.Services.Configure<SmtpSettings>(options =>
+    {
+        options.Host = Environment.GetEnvironmentVariable("SMTP_HOST");
+        options.Port = int.Parse(Environment.GetEnvironmentVariable("SMTP_PORT") ?? string.Empty);
+        options.FromName = Environment.GetEnvironmentVariable("SMTP_FROMNAME");
+        options.FromAddress = Environment.GetEnvironmentVariable("SMTP_FROMADDRESS");
+        options.Username = Environment.GetEnvironmentVariable("SMTP_USERNAME");
+        options.Password = Environment.GetEnvironmentVariable("SMTP_PASSWORD");
+        options.UseSsl = bool.Parse(Environment.GetEnvironmentVariable("SMTP_USESSL") ?? string.Empty);
+    });
+
     services.AddScoped<IClaimsTransformation, DynamicRoleClaimsTransformer>();
     services.AddScoped<IAuthService, AuthService>();
     services.AddScoped<IItemService, ItemService>();
     services.AddScoped<IOrderService, OrderService>();
     services.AddScoped<INotificationService, NotificationService>();
     services.AddScoped<IUserService, UserService>();
+    services.AddScoped<IEmailService, EmailService>();
 
     services.AddCors(options =>
     {

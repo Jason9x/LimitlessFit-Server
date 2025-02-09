@@ -1,8 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity.Data;
 using LimitlessFit.Interfaces;
 using LimitlessFit.Models.Enums.Auth;
-using LimitlessFit.Models.Requests.Auth;
+using LoginRequest = LimitlessFit.Models.Requests.Auth.LoginRequest;
+using RegisterRequest = LimitlessFit.Models.Requests.Auth.RegisterRequest;
 
 namespace LimitlessFit.Controllers;
 
@@ -48,6 +49,39 @@ public class AuthController(IAuthService authService) : ControllerBase
             RegistrationResult.InvalidEmail => BadRequest(new { MessageKey = "invalidEmail" }),
             RegistrationResult.InvalidName => BadRequest(new { MessageKey = "invalidName" }),
             _ => StatusCode(500, new { MessageKey = "registrationFailed" })
+        };
+    }
+
+    [HttpPost("forgot-password")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request)
+    {
+        var result = await authService.ForgotPasswordAsync(request.Email);
+
+        return result switch
+        {
+            ForgotPasswordResult.EmailSent => Ok(new { MessageKey = "passwordResetEmailSent" }),
+            ForgotPasswordResult.UserNotFound => BadRequest(new { MessageKey = "userNotFound" }),
+            _ => StatusCode(500, new { MessageKey = "passwordResetFailed" })
+        };
+    }
+
+    [HttpPost("reset-password")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> ResetPassword(ResetPasswordRequest request)
+    {
+        var result = await authService.ResetPasswordAsync(request);
+
+        return result switch
+        {
+            PasswordResetResult.Success => Ok(new { MessageKey = "passwordResetSuccessful" }),
+            PasswordResetResult.InvalidToken => BadRequest(new { MessageKey = "invalidResetToken" }),
+            PasswordResetResult.TokenExpired => BadRequest(new { MessageKey = "resetTokenExpired" }),
+            PasswordResetResult.InvalidPassword => BadRequest(new { MessageKey = "passwordRequirementsNotMet" }),
+            _ => StatusCode(500, new { MessageKey = "passwordResetFailed" })
         };
     }
 

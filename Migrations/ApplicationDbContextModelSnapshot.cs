@@ -224,6 +224,15 @@ namespace LimitlessFit.Migrations
                         .HasColumnType("varchar(128)")
                         .HasColumnName("password");
 
+                    b.Property<string>("PasswordResetToken")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("password_reset_token");
+
+                    b.Property<DateTime?>("PasswordResetTokenExpiry")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("password_reset_token_expiry");
+
                     b.Property<string>("RefreshToken")
                         .HasMaxLength(200)
                         .HasColumnType("varchar(200)")

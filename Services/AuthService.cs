@@ -1,6 +1,7 @@
 ﻿using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.Identity.Data;
 using System.Text.RegularExpressions;
 using static BCrypt.Net.BCrypt;
 using LimitlessFit.Data;
@@ -10,13 +11,15 @@ using LimitlessFit.Models;
 using LimitlessFit.Models.Dtos;
 using LimitlessFit.Models.Enums;
 using LimitlessFit.Models.Enums.Auth;
-using LimitlessFit.Models.Requests.Auth;
 using LimitlessFit.Services.Hubs;
+using LoginRequest = LimitlessFit.Models.Requests.Auth.LoginRequest;
+using RegisterRequest = LimitlessFit.Models.Requests.Auth.RegisterRequest;
 
 namespace LimitlessFit.Services;
 
 public partial class AuthService(
     ApplicationDbContext context,
+    IEmailService emailService,
     IHttpContextAccessor httpContextAccessor,
     IHubContext<UserHub> hubContext) : IAuthService
 {
@@ -98,6 +101,42 @@ public partial class AuthService(
         return (RegistrationResult.Success, accessToken, refreshToken);
     }
 
+    public async Task<ForgotPasswordResult> ForgotPasswordAsync(string email)
+    {
+        var user = await context.Users.FirstOrDefaultAsync(user => user.Email == email);
+
+        if (user == null) return ForgotPasswordResult.UserNotFound;
+
+        var resetToken = GeneratePasswordResetToken();
+
+        user.PasswordResetToken = resetToken;
+        user.PasswordResetTokenExpiry = DateTime.UtcNow.AddMinutes(15);
+
+        await context.SaveChangesAsync();
+
+        await emailService.SendPasswordResetEmailAsync(email, resetToken);
+
+        return ForgotPasswordResult.EmailSent;
+    }
+
+    public async Task<PasswordResetResult> ResetPasswordAsync(ResetPasswordRequest request)
+    {
+        var user = await context.Users.FirstOrDefaultAsync(user => user.Email == request.Email &&
+                                                                   user.PasswordResetToken == request.ResetCode);
+
+        if (user == null) return PasswordResetResult.InvalidToken;
+        if (user.PasswordResetTokenExpiry < DateTime.UtcNow) return PasswordResetResult.TokenExpired;
+        if (!ValidatePasswordPolicy(request.NewPassword)) return PasswordResetResult.InvalidPassword;
+
+        user.Password = HashPassword(request.NewPassword);
+        user.PasswordResetToken = null;
+        user.PasswordResetTokenExpiry = null;
+
+        await context.SaveChangesAsync();
+
+        return PasswordResetResult.Success;
+    }
+
     public async Task<string?> RefreshTokenAsync()
     {
         var userId = GetUserIdFromClaims();
@@ -113,7 +152,7 @@ public partial class AuthService(
         user.RefreshTokenExpiryTime = DateTime.UtcNow.AddMinutes(15);
 
         await context.SaveChangesAsync();
-        
+
         return accessToken;
     }
 
@@ -191,6 +230,14 @@ public partial class AuthService(
         var nameRegex = NameRegex();
 
         return nameRegex.IsMatch(name);
+    }
+
+    private static string GeneratePasswordResetToken()
+    {
+        return Convert.ToBase64String(Guid.NewGuid().ToByteArray())
+            .Replace("=", "")
+            .Replace("+", "")
+            .Replace("/", "");
     }
 
     [GeneratedRegex(@"^[^@\s]+@[^@\s]+\.[^@\s]+$")]
