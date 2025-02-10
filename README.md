@@ -1,4 +1,4 @@
-# LimitlessFit-Server
+# LimitlessFit Server
 
 LimitlessFit-Server is the backend API for the LimitlessFit web application, developed with C# and .NET Core 9. It provides secure authentication, notifications, localization, real-time communication, user management, and order management using MySQL as the database.
 
