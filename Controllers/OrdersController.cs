@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using LimitlessFit.Interfaces;
+using LimitlessFit.Models.Dtos.Order;
 using LimitlessFit.Models.Enums.Order;
 using LimitlessFit.Models.Orders;
 using LimitlessFit.Models.Requests;
@@ -53,6 +54,19 @@ public class OrdersController(IOrderService orderService) : ControllerBase
             : Ok(order);
     }
 
+    [HttpGet("my-orders")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GetMyOrders(
+        [FromQuery] PagingRequest paging,
+        [FromQuery] OrderFilterCriteria filterCriteria)
+    {
+        var (orders, totalPages) = await orderService.GetMyOrdersAsync(paging, filterCriteria);
+
+        return Ok(new { orders, totalPages });
+    }
+
     [HttpGet("all")]
     [Authorize(Policy = "AdminPolicy")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
@@ -68,17 +82,16 @@ public class OrdersController(IOrderService orderService) : ControllerBase
         return Ok(new { orders, totalPages });
     }
 
-    [HttpGet("my-orders")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [HttpGet("stats")]
+    [Authorize(Policy = "AdminPolicy")]
+    [ProducesResponseType(typeof(OrderStatsDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> GetMyOrders(
-        [FromQuery] PagingRequest paging,
-        [FromQuery] OrderFilterCriteria filterCriteria)
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> GetOrderStats()
     {
-        var (orders, totalPages) = await orderService.GetMyOrdersAsync(paging, filterCriteria);
+        var stats = await orderService.GetOrderStatsAsync();
 
-        return Ok(new { orders, totalPages });
+        return Ok(stats);
     }
 
     [HttpPatch("{id:int}/status")]

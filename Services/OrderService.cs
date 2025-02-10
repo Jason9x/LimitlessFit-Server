@@ -115,6 +115,40 @@ public class OrderService(
             .FirstOrDefaultAsync();
     }
 
+    public async Task<(List<MyOrderSummaryDto> orders, int totalPages)> GetMyOrdersAsync(PagingRequest paging,
+        OrderFilterCriteria filterCriteria)
+    {
+        var userId = authService.GetUserIdFromClaims();
+        var query = context.Orders.AsNoTracking().Where(order => order.UserId == userId);
+
+        if (filterCriteria.StartDate != null)
+            query = query.Where(order => order.Date >= filterCriteria.StartDate);
+
+        if (filterCriteria.EndDate != null)
+            query = query.Where(order => order.Date <= filterCriteria.EndDate);
+
+        if (filterCriteria.Status != null)
+            query = query.Where(order => order.Status == filterCriteria.Status);
+
+        query = query.OrderByDescending(order => order.Date);
+
+        var totalItems = await query.CountAsync();
+        var totalPages = (int)Math.Ceiling((double)totalItems / paging.PageSize);
+
+        var orders = await query
+            .Select(order => new MyOrderSummaryDto(
+                order.Id,
+                order.Date,
+                order.TotalPrice,
+                order.Status
+            ))
+            .Skip((paging.PageNumber - 1) * paging.PageSize)
+            .Take(paging.PageSize)
+            .ToListAsync();
+
+        return (orders, totalPages);
+    }
+
     public async Task<(List<OrderSummaryDto> orders, int totalPages)> GetAllOrdersAsync(PagingRequest paging,
         OrderFilterCriteria filterCriteria)
     {
@@ -170,38 +204,26 @@ public class OrderService(
         return (orders, totalPages);
     }
 
-    public async Task<(List<MyOrderSummaryDto> orders, int totalPages)> GetMyOrdersAsync(PagingRequest paging,
-        OrderFilterCriteria filterCriteria)
+    public async Task<OrderStatsDto> GetOrderStatsAsync()
     {
-        var userId = authService.GetUserIdFromClaims();
-        var query = context.Orders.AsNoTracking().Where(order => order.UserId == userId);
+        var today = DateTime.UtcNow.Date;
+        var tomorrow = today.AddDays(1);
 
-        if (filterCriteria.StartDate != null)
-            query = query.Where(order => order.Date >= filterCriteria.StartDate);
+        var deliveredToday = await context.Orders.CountAsync(order =>
+            order.Status == OrderStatus.Delivered &&
+            order.Date >= today && order.Date < tomorrow);
 
-        if (filterCriteria.EndDate != null)
-            query = query.Where(order => order.Date <= filterCriteria.EndDate);
+        var pendingOrders = await context.Orders.CountAsync(order =>
+            order.Status == OrderStatus.Pending);
 
-        if (filterCriteria.Status != null)
-            query = query.Where(order => order.Status == filterCriteria.Status);
+        var shippingOrders = await context.Orders.CountAsync(order =>
+            order.Status == OrderStatus.Shipping);
 
-        query = query.OrderByDescending(order => order.Date);
-
-        var totalItems = await query.CountAsync();
-        var totalPages = (int)Math.Ceiling((double)totalItems / paging.PageSize);
-
-        var orders = await query
-            .Select(order => new MyOrderSummaryDto(
-                order.Id,
-                order.Date,
-                order.TotalPrice,
-                order.Status
-            ))
-            .Skip((paging.PageNumber - 1) * paging.PageSize)
-            .Take(paging.PageSize)
-            .ToListAsync();
-
-        return (orders, totalPages);
+        return new OrderStatsDto(
+            deliveredToday,
+            pendingOrders,
+            shippingOrders
+        );
     }
 
     public async Task UpdateOrderStatusAsync(int id, OrderStatus status)
@@ -211,13 +233,16 @@ public class OrderService(
         if (order == null)
             throw new KeyNotFoundException($"Order with Id {id} was not found.");
 
+        var previousStatus = order.Status;
+        var date = order.Date;
+
         order.Status = status;
 
         context.Orders.Update(order);
 
         await context.SaveChangesAsync();
 
-        await hubContext.Clients.All.SendAsync("ReceivedOrderStatusUpdate", id, status);
+        await hubContext.Clients.All.SendAsync("ReceivedOrderStatusUpdate", new { id, previousStatus, status, date });
 
         await notificationService.CreateNotificationAsync(
             order.UserId,

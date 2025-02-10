@@ -7,7 +7,10 @@ using LimitlessFit.Models;
 
 namespace LimitlessFit.Services
 {
-    public class EmailService(IOptions<SmtpSettings> smtpSettings) : IEmailService
+    public class EmailService(
+        IOptions<SmtpSettings> smtpSettings,
+        IOptions<FrontendSettings> frontendSettings
+    ) : IEmailService
     {
         public async Task SendPasswordResetEmailAsync(string email, string resetToken)
         {
@@ -17,7 +20,8 @@ namespace LimitlessFit.Services
             message.To.Add(new MailboxAddress("", email));
             message.Subject = "Password Reset Request";
 
-            var resetLink = $"http://localhost:3000/reset-password?email={email}&token={resetToken}";
+            var baseUrl = frontendSettings.Value.BaseUrl;
+            var resetLink = $"{baseUrl}/reset-password?email={email}&token={resetToken}";
 
             var bodyBuilder = new BodyBuilder
             {
@@ -35,7 +39,6 @@ namespace LimitlessFit.Services
 
             await client.ConnectAsync(smtpSettings.Value.Host, smtpSettings.Value.Port,
                 SecureSocketOptions.SslOnConnect);
-
             await client.AuthenticateAsync(smtpSettings.Value.Username, smtpSettings.Value.Password);
             await client.SendAsync(message);
             await client.DisconnectAsync(true);

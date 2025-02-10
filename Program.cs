@@ -52,6 +52,11 @@ void ConfigureServices(IServiceCollection services)
         options.UseSsl = bool.Parse(Environment.GetEnvironmentVariable("SMTP_USESSL") ?? string.Empty);
     });
 
+    builder.Services.Configure<FrontendSettings>(options =>
+    {
+        options.BaseUrl = Environment.GetEnvironmentVariable("FRONTEND_BASE_URL");
+    });
+
     services.AddScoped<IClaimsTransformation, DynamicRoleClaimsTransformer>();
     services.AddScoped<IAuthService, AuthService>();
     services.AddScoped<IItemService, ItemService>();
@@ -59,13 +64,15 @@ void ConfigureServices(IServiceCollection services)
     services.AddScoped<INotificationService, NotificationService>();
     services.AddScoped<IUserService, UserService>();
     services.AddScoped<IEmailService, EmailService>();
-
+    
     services.AddCors(options =>
     {
         options.AddPolicy("AllowSpecificOrigins", policyBuilder =>
         {
+            var frontendUrl = Environment.GetEnvironmentVariable("FRONTEND_BASE_URL");
+
             policyBuilder
-                .WithOrigins("http://localhost:3000")
+                .WithOrigins(frontendUrl ?? string.Empty)
                 .AllowAnyMethod()
                 .AllowAnyHeader()
                 .AllowCredentials();
