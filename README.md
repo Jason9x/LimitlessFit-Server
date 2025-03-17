@@ -16,7 +16,7 @@ LimitlessFit-Server is the backend API for the LimitlessFit web application, dev
 - **C#** and **.NET Core 9** for the backend framework
 - **MySQL** for database storage
 - **JWT** (JSON Web Tokens) for authentication
-- **SignalR** for real-time communication (or other Websockets libraries)
+- **SignalR** for real-time communication
 - **Entity Framework Core** for database management and ORM
 
 ## Installation
