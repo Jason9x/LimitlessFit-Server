@@ -73,15 +73,6 @@ To build the application for production:
 dotnet publish -c Release -o ./publish
 ```
 
-## Contributing
-
-If you'd like to contribute
-
-1. Fork the repository
-2. Create a new branch for your feature or bug fix
-3. Implement changes and write tests
-4. Submit a pull request
-
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
