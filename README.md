@@ -1,22 +1,22 @@
 # LimitlessFit Server
 
-LimitlessFit-Server is the backend API for the LimitlessFit web application, developed with C# and .NET Core 9. It provides secure authentication, notifications, localization, real-time communication, user management, and order management using MySQL as the database.
+LimitlessFit-Server is the C# and .NET Core 9 implementation of the LimitlessFit web application server-side API with secure authentication, notifications, localization, real-time communication, user management, and order management using MySQL as a database.
 
 ## Features
 
-- **Authentication**: Secure login and registration system with token-based authentication (JWT).
-- **Real-Time Notifications**: Push real-time notifications to clients for updates and alerts.
+- **Authentication**: Token-based secure login and signup system with JWT.
+- **Real-Time Notifications**: Push real-time notification to clients for update and alerts.
 - **Localization Support**: Multi-language backend support for localized content.
-- **Websockets**: Real-time communication using websockets for instant updates.
-- **User Management**: Admin-controlled user role management and account management.
-- **Order Management**: API endpoints for managing fitness-related orders and transactions.
+- **Websockets**: Live updates through websockets for immediate updates.
+- **User Management**: Admin-controlled user role handling and account handling.
+- **Order Management**: API routes for order and transaction handling in relation to fitness.
 
-## Technologies Used
+## Used Technologies
 
-- **C#** and **.NET Core 9** for the backend framework
-- **MySQL** for database storage
+- **.NET Core 9** and **C#** for the backend
+- **MySQL** for database
 - **JWT** (JSON Web Tokens) for authentication
-- **SignalR** for real-time communication
+- **SignalR** for real-time functionality
 - **Entity Framework Core** for database management and ORM
 
 ## Installation
@@ -25,8 +25,8 @@ LimitlessFit-Server is the backend API for the LimitlessFit web application, dev
 
 - .NET Core 9 SDK
 - MySQL Server
-- MySQL Workbench or another MySQL client (optional for database management)
-- Visual Studio or another C# IDE
+- MySQL Workbench or other MySQL client (optional for db management)
+- Visual Studio or other C# IDE
 
 ### Clone the Repository
 
@@ -37,7 +37,7 @@ cd LimitlessFit-Server
 
 ### Install Dependencies
 
-Make sure you have the required dependencies in your `csproj` file. You can install them using NuGet:
+Make sure you have the needed dependencies in your `csproj` file. You may install them using NuGet:
 
 ```bash
 dotnet restore
@@ -45,7 +45,7 @@ dotnet restore
 
 ### Environment Variables
 
-Create a `.env` file or set environment variables for configuration:
+Add a `.env` file or use environment variables to configure:
 
 ```bash
 DB_PASSWORD=your-mysql-password-string
@@ -63,7 +63,6 @@ To run the server with hot reload:
 
 ```bash
 dotnet watch run
-```
 
 ### Building for Production
 
@@ -75,4 +74,4 @@ dotnet publish -c Release -o ./publish
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is released under the MIT License - see the [LICENSE](LICENSE) file for more details.
